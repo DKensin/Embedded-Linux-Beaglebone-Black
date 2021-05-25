@@ -1,0 +1,5 @@
+Bai 1:	
+	B1: xac dinh chan pwm tren bbb
+	B2: set up devicetree de su dung pwm1
+	B3: Tim hieu cach dieu khien tren user space ve pwm su dung sysfs
+	B4: Cam led va dieu khien

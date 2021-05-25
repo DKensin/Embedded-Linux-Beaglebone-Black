@@ -1,0 +1,16 @@
+diff --git a/arch/arm/boot/dts/am33xx.dtsi b/arch/arm/boot/dts/am33xx.dtsi
+index a89d5e2cf01b..d19bd3c7d355 100644
+--- a/arch/arm/boot/dts/am33xx.dtsi
++++ b/arch/arm/boot/dts/am33xx.dtsi
+@@ -464,7 +464,10 @@
+ 				"NC",	// 30
+ 				"NC";	// 31
+ 		};
+-
++		my_bus: my_bus {
++			compatible = "my_bus";
++			status = "okay";
++		};
+ 		uart0: serial@44e09000 {
+ 			compatible = "ti,am3352-uart", "ti,omap3-uart";
+ 			ti,hwmods = "uart1";

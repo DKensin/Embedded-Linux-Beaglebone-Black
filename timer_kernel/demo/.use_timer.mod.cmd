@@ -1,0 +1,1 @@
+cmd_/home/toan/Desktop/embedded/timer_kernel/demo/use_timer.mod := { echo  /home/toan/Desktop/embedded/timer_kernel/demo/use_timer.o;  echo; } > /home/toan/Desktop/embedded/timer_kernel/demo/use_timer.mod

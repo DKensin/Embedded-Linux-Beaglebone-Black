@@ -1,0 +1,1 @@
+cmd_/home/toan/Desktop/embedded/lkm/character_device/ebbchar/Module.symvers := sed 's/ko$$/o/' /home/toan/Desktop/embedded/lkm/character_device/ebbchar/modules.order | scripts/mod/modpost -m -a   -o /home/toan/Desktop/embedded/lkm/character_device/ebbchar/Module.symvers -e -i Module.symvers   -T -

@@ -1,0 +1,26 @@
+1. Nguyen mau ham main
+2. Cach OS truyen argc, agrv cho main
+3. Define void main thi argc, argv co truyen vao khong
+4. pid la gi
+Tinh huong: Co 1 process pid 200 chay ton rat nhieu ram hoac la ton nhieu cpu
+Do vay muon tim duong dan process day o dau de dieu tra
+	Muc tieu tim file binary cua process day (duong dan tuyet doi)
+	/proc vi 1 process duoc dua vao day de quan ly
+
+5. Cach os tao ra 1 process thuoc ve 1 program khac
+	fork + exec
+6. Zombie process
+	Luc process con ket thuc, process con tra ve gia tri cho process cha, luc process cha thuc su chap nhan thi process con duoc giai phong, process cha except signal day thi process con moi thuc su ket thuc. Cho den luc process cha except thi process con day van bi lo lung (Z), OS van danh tai nguyen de quan ly process con day
+
+7
+	int main()
+	{
+		char *a = NULL
+		*a = 2;
+
+		return 2;
+	}
+return? binh thuong la ket thuc chu dong, con day la bi loi bat thinh linh nen ket thuc bi dong, se tra ve 1 ma loi. Gap ma loi nao thi tra ma loi day de xu ly
+
+
+main full: int main(int argc, char* argv[], char* env[])

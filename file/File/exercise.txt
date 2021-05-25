@@ -1,0 +1,5 @@
+1. Dung command line: echo "Hello Toan" > data.txt
+2. Viet chuong trinh C:
+	open file
+	dich dau doc den vi tri truoc ten 1 dau cach ( T)
+	doc, in ra man hinh

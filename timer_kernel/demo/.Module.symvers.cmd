@@ -1,0 +1,1 @@
+cmd_/home/toan/Desktop/embedded/timer_kernel/demo/Module.symvers := sed 's/ko$$/o/' /home/toan/Desktop/embedded/timer_kernel/demo/modules.order | scripts/mod/modpost -m -a   -o /home/toan/Desktop/embedded/timer_kernel/demo/Module.symvers -e -i Module.symvers   -T -

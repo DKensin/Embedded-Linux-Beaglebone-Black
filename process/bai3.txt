@@ -1,0 +1,32 @@
+tien trinh: chuong trinh duoc nap vao he thong, co su dung tai nguyen
+chuong trinh: binary nhi phan
+
+process
+program
+
+mac du khong chay nhung no van cham di, vi du tren window thi no luu ve't lai 
+lich su -> uu: nhanh hon cho nguoi dung, cham hon ve mat he thong (do check database)
+
+2 truong hop bi dong ket thuc:
+	bi kill tu process ben ngoai
+	chay gap loi
+
+wifi co backdoor: gap loi thi nha mang cai cac goi va' loi~ ( backdoor co the la user an? )
+
+bien moi truong: luc doc ghi file dung duong dan tuyet doi, tranh loi ve bien moi truong pwd
+
+fork nhan doi -> nhan doi bang file talbe -> file table giong nhau -> tro cung vao 1 stdout
+
+ung dung fork(): goi ra 1 chuong trinh chay moi task moi, vi du trong Powerpoint goi ra chay chrome 
+
+tao da luong: hoac fork() hoac create thread moi
+
+tao ra chuong trinh moi ma van giu chuong trinh cu: fork truoc, sau do exec()
+
+argv[0] convert thanh bien moi truong PWD
+exec() phu thuoc vao bien moi truong PATH, trong PATH tim den duong dan trong exec()
+
+zoobie process gay treo he thong mac du no khong dung memory, cpu vi OS quan ly he thong ke ca Zoobie, phan OS danh ra cho Zoobie day gay treo he thong
+
+Ban chat debug: chen symbol (code C) vao ma may , release chi ca chuong trinh chay o cac file 0/1, va o debug co the tim nguoc lai ma nguon (van de bao mat)
+

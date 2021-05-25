@@ -1,0 +1,8 @@
+1. Lap trinh da luong la gi
+2. Luu y khi lap trinh da luong
+	phai dung lock
+3. Khac nhau giua mutex va semaphore
+	1 khoa va nhieu khoa
+4. nhieu thread ghi vao 1 file co nhanh hon 1 thread khong
+	cau tra loi la khong, vi thuong 1 thread ghi vao 1 file thuong la max speed roi, vi co the cham vao toc do gioi han cua o cung.
+	Ghi nhieu file thi co the luu tru o nhieu cho cua o cung

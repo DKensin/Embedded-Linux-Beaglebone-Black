@@ -1,0 +1,6 @@
+signal quyen normal khong the kill  bua bai -> permission cua signal, co nhung signal duoc gui di, co signal khong duoc gui di
+
+define sigset(mask)
+empty sigset
+sigadd
+over write

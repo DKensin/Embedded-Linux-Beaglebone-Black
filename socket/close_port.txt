@@ -1,0 +1,3 @@
+1. Check port:	sudo ss -tulwn | grep LISTEN
+2. find pid of server : ps aux | grep server
+3. kill: sudo kill -9 pid

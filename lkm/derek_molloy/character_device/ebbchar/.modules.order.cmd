@@ -1,0 +1,1 @@
+cmd_/home/toan/Desktop/embedded/lkm/character_device/ebbchar/modules.order := {   echo /home/toan/Desktop/embedded/lkm/character_device/ebbchar/ebbchar.ko; :; } | awk '!x[$$0]++' - > /home/toan/Desktop/embedded/lkm/character_device/ebbchar/modules.order

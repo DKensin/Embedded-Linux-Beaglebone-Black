@@ -1,0 +1,13 @@
+4 buoc:
+	B1: Hieu ve hardware, protocol cua loai device day
+	B2: Tim hieu chuan giao tiep de 1 app linux tuong tac voi device day.
+		Moi 1 loai device khac nhau, Linux quy dinh cac ham api san de
+		giao tiep voi device day
+		-> co chuan day vi 2 ben khong biet duoc nhau
+	B3: Tim hieu template cua device day
+		1. driver
+		2. deivce tree
+		-> tim template o dau:
+			1. doc document
+			2. doc code mau cua kernel
+	B4: coding

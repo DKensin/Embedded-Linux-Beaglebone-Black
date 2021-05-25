@@ -1,0 +1,10 @@
+watchdog daemon load watchdog.config
+watchdog.config nằm trong folder etc
+Đặt tên driver được Linux quy định sẵn
+daemon: chạy ẩn, không có giao diện, chạy ngầm
+
+có 2 core -> 2 watchdog
+	-> tạo 2 thread, mỗi 1 thread check định kỳ của mỗi watchdog riêng
+	-> không làm 1 thread vì nếu 1 core treo, 1 core chạy bình thường thì vẫn không reset
+	
+	

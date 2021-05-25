@@ -1,0 +1,40 @@
+#include <stdio.h>
+#include <pthread.h>
+
+int count = 0;
+
+void *thread_count1(void *arg)
+{
+	int i = 0;
+
+	for (i = 0; i < 100000; i++) {
+		count++;
+	}
+
+	return NULL;
+}
+
+void *thread_count2(void *arg)
+{
+	int i = 0;
+
+	for (i = 0; i < 100000; i++) {
+		count++;
+	}
+
+	return NULL;
+}
+
+void main(void)
+{
+	pthread_t thread1;
+	pthread_t thread2;
+
+	pthread_create(&thread1, NULL, thread_count1, NULL);
+	pthread_create(&thread2, NULL, thread_count2, NULL);
+
+	pthread_join(thread1, NULL);
+	pthread_join(thread2, NULL);
+
+	printf("\ncount = %d\n", count);
+}

@@ -1,0 +1,18 @@
+led driver:
+	echo 1 > /dev/misc
+		led sangs
+	echo 0 > /dev/misc
+		led tat
+	
+	chuc nang doc
+		cat /dev/misc
+			neu led dang tat thi cat se in ra 0
+			nguoc lai in ra 1
+			
+email notifier
+	Linux hỗ trợ tính năng gửi nhận mail bằng command line
+	Dung 1 app gui / nhan mail bang command line, config app day
+	khi ma co email gui den, ghi 1 ky tu nao do ra 1 file quy dinh
+	truoc
+	Viet them 1 app nua, check dinh ky file kia
+	mutt

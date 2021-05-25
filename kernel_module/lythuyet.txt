@@ -1,0 +1,12 @@
+A = driver, B = kernel module, C = A giao B
+A: build-in driver
+B: kernel module
+C = loadable driver
+
+
+invalid module format vi khac nhau version make tren lap va bbb
+
+native compile: build tren may va chay tren may day luon
+cross compile: build tren laptop, output build ra copy sang bbb chay duoc, nhung chay tren laptop lai khong duoc
+
+sudo dmesg -c > /dev/null

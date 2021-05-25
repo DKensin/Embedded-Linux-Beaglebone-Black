@@ -1,0 +1,74 @@
+1.	Ví dụ khi muốn viết driver cho 10 đèn led, hoặc source code có nhiều phiên bản, và thay vì mỗi module phần cứng có 1 file .h .c cho riêng module đó, thì khi 1 con chip mới dò code rất mất công, do đó thay vì define riêng thì define tất cả module vào hết 1 chỗ.
+	-> device tree
+	
+.dts ( ~.c trong c), và .dtsi (~.h trong c)
+	.dts: mô tả mạch
+	.dtsi: mô tả chip
+	khi build: .dtb, có cả .dts và .dtsi
+	
+1) .dts include .dtsi: board include chip: khi con chip không thay đổi, thì viết thêm 1 file config ví dụ product.dts, không cần phải viết lại chip
+
+2) .dts include .dts
+
+Ví dụ: black và green giống nhau 90%, khác nhau là green có wifi, black thì không, thì có 2 file: bb.dts: mô tả chung phần giống nhau giữa 2 board, và wifi.dts
+	build: black.dts include bb.dts
+		green.dts include bb.dts
+		-> tái sử dụng code
+
+3) .dtsi include .dtsi
+	chip omap3: ethernet 100M (chuẩn cũ)
+	     omap4: ethernet 1GB ( chuẩn mới)
+	     
+	     -> viết 3 file: omap.dtsi, E100M.dtsi (chỉ chuẩn ethernet cũ),
+	     E1G.dtsi (chuẩn ethernet mới)
+	     -> omap3: include omap.dtsi và E100M.dtsi
+	     
+3. thường hãng quy định: tên dtb, và nó nằm ở đâu
+hoặc hãng cung cấp 1 file: config.txt, file dtb do uboot đọc
+Khi uboot run kernel, thì chỉ ra địa chỉ của dtb nằm ở đâu trên RAM
+kernel chạy dtb đấy thông qua điạ chỉ. Khi kernel run, nó không quét phần cứng, 
+nó chỉ đọc file dtb, kernel hình dung ra các phần cứng đấy -> đấy là sự khác biệt
+
+chẳng hạn dtb có các node A, B, C lúc đấy kernel sẽ gọi driver tương ứng của A,B,C
+
+4. Có file devicetree_overlay: ( nằm trong /sys/device_tree hoặc gì đấy), cho phép đọc lại device tree của mình đã build. ngoài ra sau khi build device tree rồi còn cho phép ghi vào file device tree đấy
+
+
+
+5. Có nhiều device -> đơn vị nhỏ nhất là node cho mỗi device
+	làm sao cho máy hiểu được:
+	-> để mô tả thông tin cho X thì phải dùng chuẩn thông tin của X để mô 	tả.
+	-> theo chuẩn: cú pháp chuẩn
+	-> không theo chuẩn: cú pháp linh hoạt: máy không hiểu, và các giá trị 
+	đấy người viết phải tự xử lý: những giá trị đấy hardware phải xử lý như 		nào
+	
+
+6. Viết device tree cho node:
+	1) device tree cho node đấy cần đưa những thông tin gì vào
+		tra documentation
+		với từng property tra specification để biết chuẩn của nó
+	2) hardware -> điền node
+	3) trường compatible để mapping driver, driver có compatible tương ứng
+	
+	grep -nrwI
+	
+	/arch/arm/boot/dts
+	
+	/bb-kernels/KERNEL/arch/arm/boot/dts
+	
+	
+
+1. tim file dtb trong /arch/arm/boot/dts/ -> ls
+2. mo file dts len -> include .dtsi
+3. mo dtsi
+
+tim 1 module: vd watchdog
+	1. tra address cua module do trong rm -> lay duoc dia chi
+	2. tim dia chi day trong file .dtsi
+	
+hoac search theo driver cua no: /driver/watchdog....
+	
+	bb/kernel/documentation -> driver
+	
+	
+7. Viết device tree -> build lại kernel: đọc readme để build file rebuild.sh

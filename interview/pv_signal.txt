@@ -1,0 +1,12 @@
+1. Ban chat cua signal
+	software irq
+2. Luong chuong trinh khi nhan duoc 1 signal
+
+3. Cach ignore 1 signal
+
+4. Trong tinh huong thuc te, khi nao can ignore 1 signal
+	vi du dang ghi do 1 file, thi so 1 so siganl anh huong -> ignore
+
+5. signal co the gui tu user sang kernel khong (chieu nguoc lai): khong, vi tat ca driver deu hoat dong thong qua 1 process la kernel process thong qua pid
+
+khi 1 signal gui cho 1 session, thi tat ca process trong session day deu nhan duoc signal day

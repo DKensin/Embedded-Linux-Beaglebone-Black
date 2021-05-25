@@ -1,0 +1,9 @@
+1. Viet template watchdog de su dung duoc device tree
+	probe, of_match_table
+
+2. Viet 1 cai virtual driver cho watchdog
+	support 4 ham: start, stop, set_time_out, ping
+		return va chi ghi log
+	trong ham probe thi phai register watchdog va tao device file
+	
+3. Tich hop cac operation function voi hardware

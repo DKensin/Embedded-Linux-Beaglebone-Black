@@ -1,0 +1,1 @@
+cmd_/home/toan/Desktop/embedded/timer_kernel/demo/modules.order := {   echo /home/toan/Desktop/embedded/timer_kernel/demo/use_timer.ko; :; } | awk '!x[$$0]++' - > /home/toan/Desktop/embedded/timer_kernel/demo/modules.order

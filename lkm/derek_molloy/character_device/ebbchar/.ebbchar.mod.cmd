@@ -1,0 +1,1 @@
+cmd_/home/toan/Desktop/embedded/lkm/character_device/ebbchar/ebbchar.mod := { echo  /home/toan/Desktop/embedded/lkm/character_device/ebbchar/ebbchar.o;  echo; } > /home/toan/Desktop/embedded/lkm/character_device/ebbchar/ebbchar.mod

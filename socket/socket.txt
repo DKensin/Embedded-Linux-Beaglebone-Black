@@ -1,0 +1,17 @@
+1. co che NAT
+
+2. Port: phan biet ung dung nao cua bang tin day, vi du Excel, Word...
+
+3. Server: chu dong lang nghe
+   Client: chu dong ket noi
+   Server IP, Port -> server accept -> thiet lap duong truyen
+
+4. ifconfig -> network interface: dai dien cho device file cua card mang
+
+data gui ra ngoai -> thay vi ghi vao device file thi se ghi vao network interface
+
+lo: card mang ao: khi co client gui cho lo thi lo day cho server
+
+nen su dung port dong, khong nen fix cung port number
+
+5. daemon process

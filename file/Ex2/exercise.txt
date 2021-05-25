@@ -1,0 +1,4 @@
+Viet C program: 
+	Nhap ten ban tu ban phim (Ngo_Sy_Toan) use scanf("%s")
+	Ghi ra file data.txt voi noi dung nhu sau:
+		Hello Ngo_Sy_Toan

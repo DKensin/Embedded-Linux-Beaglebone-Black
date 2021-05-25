@@ -1,0 +1,20 @@
+ls -l: hien thi thuoc tinh file
+cat: hien thi noi dung file
+cp: coppy file
+man: user manual of any command in terminal
+
+vim build.sh
+chmod +x build.sh
+./build.sh
+
+
+
+gdb ./sum1
+b 9 if i==25 (b 9: dat break point)
+r or run
+print i
+print n
+
+fd = 0: stdout
+fd = 1: stdin
+fd = 2: stderr

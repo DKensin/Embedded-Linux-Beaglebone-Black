@@ -1,0 +1,8 @@
+1. Kinh nghiệm lập trình driver linux
+	có
+2. Các bước tìm hiểu và viết driver
+	Tìm hiểu thuộc driver nào
+	đọc rm để viết hardware config như nào
+	tìm template của driver
+	fill code vào driver đấy
+	tìm example mẫu để xem nó chạy như nào

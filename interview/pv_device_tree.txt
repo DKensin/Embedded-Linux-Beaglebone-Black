@@ -1,0 +1,9 @@
+1. Device tree la gi
+	Dung xml de mo ta hardware
+	Tai sao dung xml
+		vi no manh trong viec mo ta
+2. Cach mapping giua device tree va driver
+	dua vao truong compatible
+3. Cach viet device tree cho ethernet
+	doc document trong thu muc binding
+	Cach them thong tin trong thu muc binding chua mo ta?

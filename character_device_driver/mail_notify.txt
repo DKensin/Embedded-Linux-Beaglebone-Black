@@ -1,0 +1,6 @@
+email notify
+	Linux ho tro tinh nang gui nhan email bang command line
+	Dung 1 app gui /nhan mail bang command line, config app day
+	Khi ma co email gui den, ghi 1 ky tu nao da ra 1 file quy dinh truoc
+	Viet them 1 app nua, check dinh ky file kia de bao tin hieu ra den Led
+	mutt

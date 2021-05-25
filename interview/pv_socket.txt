@@ -1,0 +1,5 @@
+1. Ham htonl, ntoh
+2. dinh nghia socket
+3. network interface
+	khong dung device file vi device file khong du thong tin
+	-> dung quan ly bang device file la khong du -> dung network interface

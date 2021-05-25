@@ -1,0 +1,8 @@
+1. Virtual memory
+	moi 1 process co khong gian dia chi rieng
+	thao tac tren virtual address thay vi physical
+2. memory page
+	4k
+	thuoc tinh luu o struct page
+3. size cua 1 page
+	co the thay doi duoc thong qua build kernel

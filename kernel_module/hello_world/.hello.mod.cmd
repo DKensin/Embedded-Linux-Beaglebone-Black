@@ -1,0 +1,1 @@
+cmd_/home/toan/Desktop/Embedded/kernel_module/hello_world/hello.mod := { echo  /home/toan/Desktop/Embedded/kernel_module/hello_world/hello.o;  echo; } > /home/toan/Desktop/Embedded/kernel_module/hello_world/hello.mod

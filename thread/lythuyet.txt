@@ -1,0 +1,19 @@
+1. thread: source co cac luong: doan code thuc thi. Khi co 1 doi tuong X object thi OS quyet dinh xem X object day duoc thuc thi trong luong code nao -> thread
+ -> _task_struct
+
+2. Nom na thi thread id tro vao task struct khi khi bao thread
+	Bien 3 tro vao ham xu ly thread
+	Bien 4 la con tro tro vao arg cua ham thread
+3. Main thread la thread dau tien duoc thuc thi
+
+4. Ke ca 1 core thi lap trinh da luong van toi uu hon vi co the nhu delay() cho user nhap tu ban phim.... -> da luong xu ly cong viec tot hon
+
+5. fork() da luong duoc, nhung da luong toi uu bo nho hon, thread dong bo, fork tao ra 1 process moi -> su dung bien dung chung rat kho
+
+6. Nguyen tac may tinh khong tinh toan tren Ram ma load ra thanh ghi tinh toan roi moi load lai vao ram
+
+7. Nguyen tac thi cang nhieu lock cang cham, nhung doi lai thi an toan hon
+
+8. Semaphore la lock nhieu khoa, co n khoa thi tai nguyen thu n+1 muon truy cap vao phai cho 1 trong n khoa kia tra lock
+
+9. Mot lock dua vao nen suy nghi co can dua vao hay khong, vi dung lock lam cham hon va co the gay deadlock

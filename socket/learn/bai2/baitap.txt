@@ -1,0 +1,6 @@
+Chuong trinh download file qua mang lan
+	server: server download file
+	Mo file text, copy toan bo data tu file vao socket (1 lan ghi)
+	max 8192 bytes
+
+	client: ghi data tu socket ra file
