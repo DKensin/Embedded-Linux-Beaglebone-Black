@@ -1,7 +1,0 @@
-2. Phan bien console va graphic
-console: du lieu input, output la text -> chi dung ban phim
-	+ system support console de dang hon nhieu so voi graphic
-	+ ke ca chip co ho tro module graphic, tuy theo giai doan OS ma co the
-	co hoac khong co ho tro (source code)
-
-
