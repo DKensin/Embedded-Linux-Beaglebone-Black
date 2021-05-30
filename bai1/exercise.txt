@@ -1,0 +1,9 @@
+1. Viet chuong trinh hello world tren giao dien console va su dung gcc de build
+
+2. Viet chuong trinh in ra console noi dung file text voi duong dan duoc dat trong code
+
+3. Viet chuong trinh in ra ten cua process tu process id nhap tu ban phim
+
+4. Viet 1 chuong trinh co kha nang hien thi noi dung cua 1 file len console giong voi lenh cat. Dat ten no la MyCat va copy vao thu muc bin. Sau do su dung no giong nhu lenh cat cua he thong.
+
+5. Viet 1 chuong trinh C co kha nang in ra toa do cua chuot tren may tinh. Vi du: X/Y. Trong do X la hoanh do, Y la tung do cua con tro chuot tren man hinh
