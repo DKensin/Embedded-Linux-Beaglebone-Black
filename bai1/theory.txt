@@ -1,0 +1,74 @@
+1. Muc tieu cua khoa hoc la cho phep lap trinh dieu khien phan cung/driver co su dung he dieu hanh Linux tren he thong nhung day
+ 
+2. Phan biet console va graphic
+console: du lieu input, output la text -> chi dung ban phim
+	+ system support console de dang hon nhieu so voi graphic
+	+ ke ca chip co ho tro module graphic, tuy theo giai doan OS ma co the co hoac khong co ho tro (source code).
+    -> console tiet kiem tai nguyen cua he thong.
+    -> de dung duoc do hoa thi phai xu ly CPU nhieu hon, console thi khong can.
+
+    + khi support Linux cho chip moi thi support che do console cho chipp de hon rat nhieu support graphic. Che do console thuong duoc support qua cong UART cua con chip
+    -> ve mat lap trinh develop cong UART hay che do debugger bao gio cung de hon develop module graphic
+
+    + khong phai con chip nao cung support duoc che do graphic: vd router wifi
+-> tool lap trinh che do console: vim hoac nano
+
+3. cay thu muc linux:
+    + Linux: moi doi tuong trong he dieu hanh deu duoc coi la file: tu tien trinh, peripheral, ... Thuc te cach doc ghi tu OS xuong phan cung la doc ghi thong qua file
+    -> Linux quan ly moi thu thong qua file.
+
+    /bin:   chua tat ca chuong trinh chay cua Linux
+            chua tat ca command line cua cac ban
+    /boot:  chua tat ca du lieu de boot len he dieu hanh
+    /var:   chua tat ca data dang duoc luu tren ram
+    -> tim hieu tren Linux no chua cac loai file nhu nao!
+
+4. user
+La 1 doi tuong trong he dieu hanh / trong he thong, quy dinh doi tuong day duoc quyen so huu nhung tai nguyen nao cua he thong -> de no bao ve duoc tai nguyen trong he thong: tai nguyen nay chi thuoc ve user nay, tai nguyen kia chi thuoc ve user kia -> user co nhung quyen han(permission) tuong tac vao he thong va duoc quy dinh truoc
+    -> Khi lap trinh, nhieu khi cung 1 doan code, nhung chay voi user A duoc, nhung chay voi user B lai bao loi
+    -> Co nhieu nguyen nhan, nhung 1 trong cac nguyen nhan co the la do permission cua user B khong co quyen duoc tuong tac voi cac tai nguyen day
+
+5: shell
+    + code voi vi dieu khien, duoc goi la ngon ngu bien dich: moi doan code chi co y nghia cho minh doc bang mat, chu khong be nguyen doan code day vao trong CPU de chay.
+    -> de CPU chay thi phai convert code sang ma may 0/1, ma nhi phan day moi duoc day vao CPU de chay.
+    -> bien dich code C sang ma may.
+
+    + Khong phai moi loai ngon ngon deu tuan theo chuan bien dich, co mot loai ngon ngu la ngon ngu thong dich.
+
+    + Ngon ngu thong dich: khong can buoc convert bien dich sang ma may, tai vi ban than cac chuong trinh thong dich cung khong duoc nap truc tiep cac cau lenh day vao trong CPU, no co chuong trinh viet bang ngon ngu bien dich, cac chuong trinh bien dich day doc truc tiep ma thong dich va thuc thi
+
+    -> lam the nao de he dieu hanh chon dung chuong trinh de thong dich cho dung doan code cua ngon ngu day -> dua vao file's header. File's header chi dinh chuong trinh nao de thong dich cho doan code day
+
+6. Chuong trinh va tien trinh
+    + chuong trinh: file binary duoc build tu source code, nam tren o cung
+
+    + tien trinh: cac chuong trinh day duoc build ra roi, bat dau duoc khoi chay, bat dau duoc nap vao he thong.
+
+    + chuong trinh va tien trinh khac nhau nhu nao:
+        - chuong trinh la du lieu binary luu tru tren o cung, chua he tieu thu tai nguyen cua he thong nhu RAM hay CPU
+        - tien trinh duoc nap vao he thong roi, bat dau tieu thu tai nguyen cua CPU
+
+7. Tinh da nhiem cua he dieu hanh
+    + OS co tinh da nhiem, vi du ke ca chip 1 core thi van lam duoc nhieu viec cung luc: nghe nhac, choi game, word...
+    -> cam giac nhu chay song song nhieu tac vu
+    -> day chi la cam giac cua con nguoi
+    -> thuc te thi do chip chuyen doi giua cac cong viec lien tuc: chang han go word thi trong luc cho nguoi dung nhap tu ban phim, chip chuyen sang lam viec khac: nghe nhac, 10ms sau lai quay lai word -> chuyen doi trong thoi gian ngan -> tao cam giac cong viec duoc thuc hien song song
+    -> idea dua tren toc do xu ly cua con nguoi luon cham hon may tinh rap nhieu lan
+
+    + lap trinh da luong co nhat thiet phai can nhieu core hay khong? vi du he thong embedded chi co 1 core duy nhat -> co the lap trinh da luong tren core day hay khong?
+    -> cau tra loi la co
+
+    + da luong hay khong phu thuoc vao bo lap lich chu khong phu thuoc vao so core
+
+8. So sanh Linux va Realtime OS
+    + Linux hay Android deu khong phai la he dieu hanh realtime
+
+    + realtime: cac task / cong viec deu phai quy dinh deadline cho cac cong viec day: vi du xu ly phanh oto, day chuyen san xuat...
+    -> nhuoc diem: kha nang chiu tai cua he thong: no phai thoa man 1 cong viec phai xu ly trong vong bao lau, phai hoan thanh truoc bao lau -> so luong cong viec co the nhan vao 1 luc luon luon la 1 con so rat nho. Thuong trong he thong realtime, so luong cong viec trong hang doi (queue) thuong la 1 so < 10.
+
+    + Linux: khong cam ket bao gio cong viec day duoc xu ly xong, nhung uu diem la cho du dua vao bao nhieu cong viec di chang nua thi no van luon luon nhan va xu ly
+    -> he thong non-realtime: huu ich cho giai tri
+    -> OS non-realtime nguoi ta hay goi la he thong multi-media OS
+    -> user dung OS de giai tri: mong muon chay nhieu cong viec cung luc, khong quan trong viec delay lam
+
+    + co nhieu thuat toan lap lich realtime: dua tren y tuong cot loi la nguoi lap trinh phai luong truoc duoc cac cong viec co the co, khong bao gio de he thong roi vao truong hop co qua nhieu cong viec khong xu ly kip -> lam cho so luong cong viec co the lam cung luc luon la mot con so nho: tai vi nguoi lap trinh phai luong truoc duoc
