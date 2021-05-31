@@ -1,1 +1,0 @@
-cmd_/home/toan/Desktop/Embedded/kernel_module/hello_world/modules.order := {   echo /home/toan/Desktop/Embedded/kernel_module/hello_world/hello.ko; :; } | awk '!x[$$0]++' - > /home/toan/Desktop/Embedded/kernel_module/hello_world/modules.order

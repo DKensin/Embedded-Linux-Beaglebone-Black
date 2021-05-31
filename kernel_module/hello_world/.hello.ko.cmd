@@ -1,1 +1,0 @@
-cmd_/home/toan/Desktop/Embedded/kernel_module/hello_world/hello.ko := ld -r -m elf_x86_64  -z max-page-size=0x200000  --build-id=sha1  -T ./scripts/module-common.lds -o /home/toan/Desktop/Embedded/kernel_module/hello_world/hello.ko /home/toan/Desktop/Embedded/kernel_module/hello_world/hello.o /home/toan/Desktop/Embedded/kernel_module/hello_world/hello.mod.o;  true
