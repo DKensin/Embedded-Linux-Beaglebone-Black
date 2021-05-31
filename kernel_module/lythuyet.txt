@@ -3,10 +3,104 @@ A: build-in driver
 B: kernel module
 C = loadable driver
 
-
-invalid module format vi khac nhau version make tren lap va bbb
+invalid module format vi khac nhau version make tren lap va bbb -> cross compile
 
 native compile: build tren may va chay tren may day luon
-cross compile: build tren laptop, output build ra copy sang bbb chay duoc, nhung chay tren laptop lai khong duoc
+cross compile: build tren laptop, output build ra copy sang bbb chay duoc, nhung chay tren laptop lai khong duoc.
 
-sudo dmesg -c > /dev/null
+sudo dmesg -c
+
+1. Driver tren Linux co 2 loai:
+	+ Loai thu nhat la duoc build chung vao cung image cua OS, loai day duoc goi la build-in driver.
+
+	+ Loai thu 2: driver build ra file o ben ngoai. Khi OS chay, OS co the quyet dinh load driver day vao hay khong. Loai nay duoc goi la loadable driver.
+		- Tren Linux goi la kernel module.
+		- Duoc build ra file .ko extension.
+	-> Viet driver co the loadable duoc.
+
+	+ Kernel module khong chi la driver dieu khien phan cung ma no con lam nhung cong viec khac, driver chi la 1 phan nho cua kernel module.
+
+	+ Khi kernel module duoc load vao he thong, kernel module day voi OS the thanh 1 the thong nhat. Khi day kernel module day co the truy cap moi file trong he thong vi no va OS tro thanh 1 the thong nhat va no co quyen han cua he dieu hanh.
+		- kernel module loi -> he dieu hanh gap loi
+		- code app, truy cap con tro NULL -> he thong khong bi crash ma chi app day bi chet.
+		- code kernel module, load vao, kernel module day truy cap con tro khong hop le thi doi khi gay crash ca he thong.
+
+2. Setup moi truong de lap trinh kernel module
+	+ Cai tool de lap trinh, cong cu build code. Cach load vao board va test module day.
+
+	+ Code app, dung tool all-in-one (IDE): code, compile, debug. Tren Linux, khong khuyen nghi dung IDE ma dung tool de code, tool khac de compile.
+
+	+ Hardware: Udoo, Beaglebone Black: board pho thong, chay Linux.
+		- IoT, AI: hay dung Pi, nhung rm cua no rat la so sai -> khong dung chi tiet de viet duoc driver tren Pi
+		- Muc tieu: config muc thanh ghi, chu khong dung thu vien -> Pi khong dap ung duoc
+		- Giua udoo va beaglebone thi beaglebone hay hon
+
+	+ Cai dat he dieu hanh cho hardware la cac file nen, dung tool ghi file nen vao sdcard (flash OS vao sdcard).
+
+	+ Sau khi boot duoc board len roi, connect PC voi board. Thuong lap trinh build code tren PC, chay file build ra tren board. De connect dung mobaxterm, ssh...
+		- connect co 2 duong: ethernet / debugger
+		- nen connect qua debugger: vi luc develop driver, neu gay loi thi co the he thong khong co mang, bi mat network -> code loi thi khong the debug duoc vi khong nhin thay duoc gi, khong connect duoc vao board 
+		-> nen dung debugger
+		- debugger: du gay ra loi gi thi van debug duoc
+
+	+ Driver chay duoc tren Linux, dua sang Android chay duoc luon khong can phai sua code, vi ban than android va linux cung chung 1 nhan -> viet driver giong nhau -> android embedded. Nhuoc diem: kho lam
+
+	+ install kernel header: chua file header chuyen dung de include khi viet driver.
+
+3. Code
+	+ return:
+		- 0: chay thanh cong
+		- so am: thong bao OS biet trong qua trinh init da gap phai 1 loi nao day
+			+ ham init module van chay xong, qua trinh hoat dong driver co the van khong bi anh huong
+			+ OS nghi la driver cua ban trong qua trinh khoi tao da gap 1 loi nao day
+		- main: return 0 thi chuong trinh ket thuc
+		- driver: return 0 thi driver khong he bi ket thuc, van chay. return 0 chi co y nghia driver da init xong roi, ket thuc qua trinh init, cac luong chay khac cua no van giu nguyen o day
+		- driver that su ket thuc thi user goi cau lenh unload driver: rmmod. Khi goi cau lenh unload -> ham cleanup_module duoc goi ra
+
+	+ build kernel module: phai dung Makefile
+		- Makefile chi dinh trinh bien dich compile file .c ra file driver
+		- chi dinh ten file .c nao can phai build ra: hello.o
+
+	+ compile code: make
+
+	+ insmod: can sudo vi sau khi load xong thi tat ca doan code trong file .ko co toan quyen cua he dieu hanh, muon lam gi cung duoc -> can quyen root
+
+	+ khi go lsmod: cac module duoc load vao he thong
+		- cot size: kich thuoc file binary cua file .ko
+			+ gia su kernel module xin cap phat 1 GB, thi size van la kich thuoc cua file binary chu khong phai la kich thuoc file binary + 1GB
+
+			+ khong phai la kich thuoc bo nho ma kernel module day dang su dung
+		- cot used by: so thread dang su dung tai nguyen cua kernel module day
+			+ tai nguyen co the la 1 bien, 1 ham
+
+			+ tai sao ban viet driver ma nguoi khac co the su dung duoc ham cua ban?
+
+			+ tren tang app, 1 chuong trinh C co bien a, lam the nao de 1 chuong trinh C khac dung duoc bien a day? -> cau tra loi la khong co cach nao ca vi no doc lap voi nhau
+
+			+ driver nguoc lai: driver nao day co bien a thi 1 driver khac co the dung bien a day 1 cach binh thuong, giong nhu bien a day la cua no
+			-> tai sao lai the?
+			-> tai vi kernel module sau khi duoc load len roi no tro thanh 1 the thong nhat voi he dieu hanh
+			-> ko1 va ko2 sau khi duoc load vao OS thi no tro thanh 1 the thong nhat voi nhau -> co the dung chung duoc bien voi nhau.
+		- cot thu 4: ten cua cac kernel module dang dung tai nguyen cua cac ban
+	+ module license: 
+		- Linux: cong dong ma nguon mo, trong he thong ma nguon mo no quy dinh he thong ve giay phep phat hanh phan mem
+
+		- Nghia la toi viet bo code nay ra, toi co dong y cho ban copy bo code nay vao san pham thuong mai hay khong, hay ban dung code cua toi thi ban co phai tra tien cho toi hay khong
+			-> cac quy tac day phu thuoc vao license
+			-> license la GPL: copy bo code vao san pham thuong mai duoc, khi ban khong can phai tra tien cho ong tac gia day
+			-> tuy nhien ghi ro nguon cua code day la duoc
+		
+		- recommend: chi dung GPL, neu dung khac co the bi loi
+
+	+ modinfo: lay thong tin cua kernel module
+
+	+ 2 file driver: file driver 1 co bien a1, driver 2 co bien a2. Muon chia se bien a1 day trong file driver 2
+		-> lam nhu the nao
+
+	+ chuong trinh C: cap phat dong va quen free, thi khi chuong trinh C ket thuc, tat ca vung nho malloc se duoc tu free di boi he dieu hanh. 
+		-> vong doi cua memory leak ton tai khi start chuong trinh, cung lam cho den khi chuong trinh C ket thuc.
+
+	+ kernel module tao ra memory leak thi ke ca khi unload kernel module di thi memory leak day van nam o day khong di dau ca
+
+	+ Linux khong cho minh dung dia chi vat ly, muon truy cap dia chi vat ly thi phai thong qua buoc la xin cap phat dia chi virtual address cho no.
+		-> cap phat dia chi nao day cho dia chi vat ly, va truy cap dia chi vat ly thong qua dia chi ao.
