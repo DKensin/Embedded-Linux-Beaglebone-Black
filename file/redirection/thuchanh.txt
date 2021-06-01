@@ -1,0 +1,7 @@
+1. gcc sample.c
+2. run ./a.out -> display "Hello world" on screen
+3. redirection: ./a.out > stdout
+4. ls check result
+5. cat stdout -> display: Hello world
+
+	-> change direction of stdout
