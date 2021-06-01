@@ -1,0 +1,181 @@
+1. Trong bai linux kernel module: hoc cach viet driver ON/OFF Led, tuy nhien driver day chi mang y nghia tuong trung chu trong du an thuc te nguoi ta khong lam nhu vay.
+
+-> Bay gio, moi driver deu phai cung cap co che ho tro de tang app co the doc ghi duoc xuong phan cung.
+-> Vi du driver cua port Ethernet phai ho tro duoc tang app: doc ghi va gui nhan ban tin qua cong Ethernet.
+-> lam the nao 1 driver lam duoc viec day?
+-> Linux quy dinh: moi giao tiep xuong phan cung deu phai thong qua file
+-> Viet duoc driver roi thi phai cung cap 1 giao dien file de app co the doc ghi duoc xuong phan cung
+
+-> trong bai file: cach doc / ghi file tren tang app
+-> bai character device driver: cach xu ly doc / ghi file o duoi driver nhu the nao.
+
+2. Tren linux thi file no la cai gi?
+	+ Windows: file la 1 doi tuong de luu tru du lieu tren o cung.
+
+	+ Linux:
+		- chi co 1 so loai nhat dinh dung de dai dien data tren o cung de luu tru no
+		- phan lon thi khong he dai dien cho bat cu data nao tren o cung
+		- linux: file la 1 thuc the cua 1 doi tuong nao day trong he dieu hanh
+		- linux quy dinh moi doi tuong ton tai trong he dieu hanh deu phai duoc bieu dien thong qua 1 file nao day
+		- vi du: 1 chuong trinh dang chay thi ban than chuong trinh dang chay day cung phai duoc bieu hien thong qua 1 file nao day trong he thong
+			-> co the thao tac voi chuong trinh day thong qua viec thao tac voi file
+		- vi du: moi phan cung trong he thong: chuot, ban phim, man hinh, am thanh cung deu duoc dai dien boi file nao day.
+			-> thao tac doc/ghi am thanh, doc/ghi ra ngoai man hinh: deu thong qua doc/ghi file dai dien cho no
+
+	+ struct dinh nghia file: struct file include/linux/fs.h
+
+	+ cau hoi: Neu tren Linux moi chuong trinh dang chay deu co 1 file nao do dai dien cho no -> co the lam 1 chuong trinh giong Task Manager cua Windows: dem so chuong trinh / tien trinh dang chay trong he thong la bao nhieu -> lam bai nay thong qua viec dem so file, neu moi moi chuong trinh deu co 1 file dai dien -> dem so chuong trinh dang chay bang cach dem so file day trong thu muc /proc
+		- /proc co nhieu folder con, moi folder con day la 1 so nguyen nao day
+		- co nhieu folder, moi folder la 1 so. ban chat moi 1 folder nay dai dien cho 1 process dang chay trong he thong. co the thao tac duoc voi cac process day thong qua viec doc/ghi file trong folder nay
+
+		-> dem so tien trinh dang chay bang cach dem so folder trong folder /proc/
+		-> trong linux co cau lenh tuong tu Task Manager: top
+		-> top chay bang cach doc/ghi truc tiep du lieu tu folder /proc de hien thi ra ngoai
+
+
+3. Phan loai cac loai file trong he thong: 3 loai
+	+ regular file: dai dien cho cac du lieu trong o cung. Ban than cac file nay la data duoc luu tren o cung. Tat may di bat len thi file nay van nam day, khong bi mat di.
+
+	+ file ma data cua no la danh sach cac file chua trong no -> giong voi khai niem folder
+		- gia su co foler embedded
+		- thay vi cd embedded, dung vim embedded de doc noi dung file: chua cac text mo ta folder day va text mo ta ten cua file nam trong folder day
+		-> folder trong linux la file, ben trong chua text dung de mo ta cac file nam trong no
+
+	+ cac loai file khac: file dai dien cho chuong trinh dang chay, file dai dien cho phan cung,...Diem chung cua cac loai file khac la no khong he duoc luu tren o cung, tat may di tat ca cac file nay bien mat, duoc tao lai khi he thong boot len.
+		- vi du cac file trong /proc: cu moi khi co 1 tien trinh nao do duoc chay thi se co 1 file trong folder nay duoc tao ra. Khi tat may tat ca cac file trong folder nay bien mat vi chung khong he duoc luu trong o cung
+		- vi du file trong /dev: dai dien cho phan cung. No chi duoc tao ra khi he thong phat hien ra co 1 phan cung nao day -> tao ra 1 file dai dien cho phan cung day
+
+	+ he thong cay thu muc cua Linux: 
+		- Windows: My Computer di den tat ca cac folder, tu cac folder di den cac file -> My Computer la goc re cua he thong cay thu muc
+		- Linux: / (root), trong root co duong dan di den tat ca o cung tren may tinh va di den tat ca cac file khac.
+		- Windwos: cac folder chua cac file thuoc cung 1 muc dich nao day
+			+ vi du file con nam trong folder Windows: cac file dung cho he thong
+			+ file nam trong User: data cua nguoi dung
+			+ program file: file duoc tao ra khi nguoi dung install chuong trinh
+		- Linux: cung nhu the
+			+ /bin: cac chuong trinh cua he thong hoac nguoi dung
+			+ /dev: device file, dai dien cho hardware
+			+ /boot: dung den khi he thong boot len
+
+		- Linux: config he thong qua console, ban chat doc/ghi vao cac file config trong he thong cay thu muc -> phai biet voi config nay thi file de config no nam o dau de vao sua -> nam ro he thong cay thu muc
+
+
+	sync(): 	+ co the viec ghi vao file moi chi ghi 				vao ram thoi chu chua ghi xuong o cung
+				+ sync data tu ram xuong o cung
+
+	-> cau hoi: neu co 2 chuong trinh C la a va b, trong 2 chuong trinh nay mo ra 2 file, khong chac la 2 file nay co cung duong dan hay khong, nhung gia tri fd tra ve la 2 gia tri bang nhau. The thi khi goi ham write(), truyen vao 2 so nguyen la 2 fd bang nhau -> lieu co ghi vao chung 1 file hay khong?
+
+4. fd
+	+ fd = open(file); -> fd = 3, cho du la bat ky file data nao
+		-> tiep tuc mo file -> fd tang len 1 gia tri
+		-> ban chat chuong trinh dang mo ra nhung file nao day nua: fd = 0, 1, 2
+
+	+ thao tac voi file trong C: moi mot chuong trinh C, mac dinh no co 3 luong nhap xuat chuan, luong input (stdin), output (stdout), output cho loi (stderr)
+		-> ban chat 3 luong day la cai gi?
+			luong nhap xuat chuan: data di tu ban phim vao
+			luong output chuan: luong di ra man hinh
+			luong output cho error: cung di ra man hinh
+		-> moi lien he giua luong va thiet bi?
+
+	+ Khi start chuong trinh len, chua can mo 1 file nao day, mac dinh chuong trinh mo ra 3 file: stdin (fd = 0), stdout (fd = 1), stderr (fd = 2)
+		-> ban chat 3 file nay la 3 file trong thu muc dev
+			- file thu nhat: nam trong /dev, dai dien cho ban phim
+			- file thu 2: cung nam trong /dev, dai dien cho man hinh
+			- file thu 3: cung nam trong /dev/, cung dai dien cho man hinh
+
+	+ cau hoi: tai sao fd la 1 so nguyen chu khong phai la 1 con tro?
+
+
+5. file table cua process
+	+ La 1 bang dinh kem cung voi tien trinh. Trong bang nay, moi 1 o trong bang la 1 con tro tro den 1 dia chi nam tren RAM cua 1 file nao day
+		-> moi khi mo file, chuong trinh he thong tim hang trong gan nhat nho nhat ma chua tro den 1 file nao ca
+		-> tien hanh mo file, vut dia chi memory cua file day vao trong hang cua file table, tra ve cho chung ta index cua phan tu day trong mang
+		-> index day chinh la cac so fd
+		-> gia tri fd = so phan cua cua con tro file trong bang file table
+
+	+ Khi boot len, mac dinh 3 hang dau tien duoc mo luon: stdin, stdout, stderr, mo tiep file nua thi fd = 3
+
+	+ Cau hoi: 2 process cung mo ra 1 file fd co gia tri bang nhau -> chuyen gi se xay ra, lieu no co cung ghi vao 1 file hay khong?
+
+		-> 2 fd co gia tri cung bang 5 thi co tro den cung 1 file tren o cung hay khong?
+
+		-> ten file va so phan tu trong mang khong co moi lien he gi voi nhau, so phan tu trong mang chi dai dien cho thu tu mo
+
+		-> 2 process co fd = nhau thi tren 2 process dang mo den len thu may, neu cung mo den lan thu 5 -> fd = 5. Khong the biet duoc lan mo thu 5 thi moi process mo den file nao, co the cung 1 file, co the tren 2 file khac nhau
+
+	+ Nam duoc stdin, stdout, stderr rat quan trong. Khi lap trinh, du lieu den tu stdin, phai nam duoc stdin den tu dau. Chang han ssh thi du lieu den tu port mang,...
+
+	+ Thay doi luong (flow) stdin, stdout, stderr:
+		- stdout: toan tu >
+		- stdin: toan tu |
+
+
+6. Block device
+	+ Tren cac thiet bi luu tru nhu o cung, moi khi format se hay hoi kich thuoc block la bao nhieu: 512B, 1KB hay 2KB... -> cai day la cai gi?
+
+	+ Cac thiet bi o cung can mat doc, va dia quay phia duoi. Khi can doc 1 data nao day, no xac dinh data day nam dau tren o cung, va di chuyen mat doc den vung day (quay dia de doc). Do co che quay cua o dia, kich thuoc moi lan doc khong the la 1 byte mot, vi no qua nhanh khong doc kip, thuong doc toi thieu 1 doan nao day do co che vat ly cua no la nhu vay.
+
+	+ Quy dinh gioi han toi thieu 1 lan doc la 512 byte thi moi doc kip duoc -> 1 block min = 512 byte
+		- cho du moi khi doc chi 1 byte tren o cung, thuc te he dieu hanh van doc du 512 byte lan can day ( 1 sector).
+		- nap 512 byte day vao RAM, tra ve 1 byte
+		- lan sau neu doc 1 byte hoac 10 byte khac, no kiem tra luon trong 512 byte truoc co cai day hay khong, neu co thi khong can doc tren o cung nua, tra ve tu RAM luon. Neu khong co thi doc 512 byte khac
+
+
+7. Cac ham doc ghi file
+	+ open():  mo file
+		- kiem tra file day co ton tai hay khong, neu co ton tai, no se malloc() ra struct file trong memory, tien hanh khoi tao sao cho cac gia tri cua struct file day tro duoc dung vao file vat ly nam tren o cung, hoac file hardware nao day
+
+		- sau do, update dia chi cua struct file trong memory vao trong bang file table. Sau khi update xong, tra ve index trong file table day cho fd
+
+	+ sau khi open() xong co the thuc hien cac ham read(), write()
+
+	+ Sau khi doc, ghi xong roi, nhieu khi se gap van de nhu the nay. No co co che de toi uu phan cung, nhieu khi data ghi chua chac da ghi vao o cung luon, nhieu khi no se ghi vao 1 vung RAM nao day. 
+		- Vi block la 512 byte, ban ghi 2 byte, chua chac can ghi xuong o cung luon
+		- Nhieu khi no se doi ghi them 510 byte nua cho du 1 block roi moi ghi xuong o cung
+
+	+ close(): dong file, no se lam cac cong viec nhu sau
+		- free hang day trong bang file table
+		- free memory ma no khoi tao struct file kia
+		- nhieu khi synchronize data tu RAM xuong o cung
+
+	+ lseek() dich vi tri doc cua file
+
+	+ sync(): ghi tat ca data cua tat ca file nam tren RAM xuong o cung
+		- khong chi sync data nam tren RAM cua file dang mo, ma con sync tat ca data cua tat ca file cua tat ca chuong trinh khac
+
+	+ data duoc ghi chua chac ghi xuong o cung luon, thuc chat duoc ghi vao 1 vung trong RAM (cache memory), dinh ky he dieu hanh sync vung data tren RAM xuong o cung -> co che nay rat bi dong, khong control duoc luc nao sync hay khong
+		-> de chu dong sync: dung lenh sync()
+		-> thuong goi ham close() thi se sync luon
+
+		- tai sao can cache: doc/ghi tren o cung rat la cham, doc/ghi tren RAM nhanh gap 10 lan doc/ghi tren o cung
+
+		- vi du lan doc 1, muon doc 1 byte -> dich vi tri dau doc ve vung day doc 1 byte, lan sau doc 2 byte lien ke byte tren kia thi lai phai dich dau doc ve vung luc nay -> mat thoi gian
+
+		-> de tiet kiem thoi gian: doc 1 block, vut data doc duoc vao RAM. Doc 1 byte thi tra ve 1 byte, 511 byte kia trong RAM de day. Lan sau doc vao vung lan can thi tra data cho luon
+
+		- vung RAM chua data doc tu o cung ve goi la cache memory
+
+		- dinh ky, OS quyet dinh luc nao sync giua cache va o cung, luc nao khong: sync bi dong
+
+	+ van de gap phai: ghi data vao file, nhung mo file khong thay data dau, do co che sync nhu tren
+		-> khac phuc: doc/ghi xong thi sync
+
+
+8. Synchronous / asynchronous function
+	+ synchronous function: function khi ma goi no chi tra ve gia tri khi function day hoan thanh
+		-> goi ham nay, doi ham nay chay xong no moi chay cau lenh phia duoi
+
+	+ asynchronous: khong can ham chay xong, van chay luon cau lenh phia duoi
+
+	+ read(), write(): synchronous function
+		-> khi ham tra ve: hoac loi, neu khong loi thi doc/ghi hoan thanh
+
+	-> tai sao sinh ra co che nay?: Khi doc/ghi voi data lon, gay treo app/giao dien -> day la 1 nhuoc diem
+
+	+ Ky thuat khac phuc
+		- dung asynchronous read/write
+		- tao 1 thread moi de doc/ghi
+
+	+ Co che: goi ra ham doc asynchronous, ham day can them 1 tham so nua la callback la 1 con tro file tu dinh nghia, tro den ham cua cac ban.  Khi ma ham day no doc xong, no se goi ra ham callback cua cac ban dang ky tu truoc
+		-> thao tac voi du lieu doc duoc khi ham callback da duoc goi ra
+
