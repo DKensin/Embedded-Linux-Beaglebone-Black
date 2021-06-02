@@ -1,0 +1,4 @@
+1. make
+2. insmod driver
+3. echo data > /dev/simple_misc
+4. dmesg
