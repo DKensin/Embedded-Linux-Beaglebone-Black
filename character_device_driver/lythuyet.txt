@@ -1,0 +1,112 @@
+1. Trên Linux mỗi phần cứng đều được hệ điều hành hiểu như 1 file
+	-> hệ điều hành giao tiếp với phần cứng thông qua đường nào? 
+	-> Tất cả ứng dụng trên  user-space giao tiếp với phần cứng thông qua đường nào?
+	-> ở trên tầng user, tất cả ứng dụng giap tiếp với phần cứng thông qua file
+	-> target: học cách viết driver để xử lý lời gọi đọc/ghi file truyền từ tầng user xuống.
+2. Phân chia các loại driver
+	+ Linux có rất nhiều loại device: chuột, bàn phím, màn hình, i2c, ethernet...
+
+	+ Có thể gộp chung vào thành 3 loại chính:
+		- character device: cho phép đọc/ghi theo từng byte một.
+
+		- block device: đọc/ghi theo từng khối một
+			-> cho dù đọc 1 byte thì driver vẫn đọc n byte, trả về 1 byte cho các bạn.
+
+		- network device: data đọc/ghi vào driver đấy thì sẽ không phải đi đến 1 thiết bị nào đấy trong hệ thống, mà là đi ra ngoài hệ thống: mạng Internet, Lan, CAN, giao tiếp ra board khác...
+
+	+ Character device đặc biệt: sau này khi viết driver, nếu không biết được driver đấy thuộc loại nào thì có thể viết driver cho device đấy theo kiểu character device, nó vẫn chạy được.
+		-> nếu viết driver theo kiểu character deivce, nó có thể điều khiển được gần hết các thiết bị phần cứng.
+
+3. Device file
+	+  Là 1 file nằm trong thư mục /dev, được hệ điều hành tạo ra nhằm mục đích hỗ trợ cho OS / app có thể đọc/ghi xuống phần cứng thông qua file.
+
+	+ Được đại diện bởi 2 con số: major và minor number
+		- 1 con số đại diện cho loại phần cứng.
+		- 1 con số còn lại đại diện cho loại driver đang điều khiển nó.
+
+		- hhệ điều hành quản lý việc driver nào điều khiển device nào thông qua 2 con sô này.
+			-> khi driver tạo ra device file, phải đăng ký major và minor number của device file nó muốn tạo ra.
+
+			-> Khi hệ điều hành nhận được lời đọc/ghi vào 1 device file bất kỳ, nó lấy ra major và minor number từ device file đấy, compare lại với các driver đã đăng ký, xem driver nào đăng ký major và minor number trùng với bộ số này -> chuyển lời đọc/ghi đấy cho driver đấy.
+
+		- xem bằng cách ls -l /dev
+
+	+ Phương pháp tạo ra device file:
+		- ddùng thẳng driver để tạo ra device file (dễ nhất)
+			-> dưới driver có những hàm, mà gọi những hàm này ra thì device file được tạo ra.
+		- 1 số phương pháp nâng cao hơn: udev, command line
+			+ cắm USB vào máy tính, tự nhiên device file cho USB đấy sẽ được tạo ra
+				-> thông qua tiến trình udev
+
+			+ tạo device bằng udev -> sẽ có những tính năng nâng cao hơn.
+
+			+ mknod command: trên máy tính không cần có device đấy, dùng command line tạo ra được device file cho driver đấy trong thư mục /dev bằng mknod
+
+
+4. Code
+	+ trong hàm init: tạo ra device file
+
+	+ alloc_chrdev_region(): xin cấp phát major và minor number cho device
+
+	+ cdev_alloc(): cap phat memory cho struct character device
+		THIS_MODULE: chỉ định driver này chính là owner của  device file đấy
+
+	+ cdev_add(): sau khi khởi tạo vùng nhớ cho struct device đấy, khởi tạo thông tin cơ bản cho nó, xin kernel đăng ký struct đấy với hệ điều hành
+		-> device file chưa được tạo ra.
+
+	+ class_create(): đăng ký nhóm đổi tượng của device file đấy.
+		-> tạo ra folder trùng tên được truyền vào trong hàm class_create() trong folder /sys
+
+		-> nhiều khi tạo ra nhiều device file nhưng có cùng 1 loại nào đấy chẳng hạn -> folder trong
+		/sys sẽ đại diện cho loại đấy.
+
+	+ device_create(): tạo file có tên trùng với tên được truyền trong hàm device_create() trong thư mục /dev
+
+
+5. Deivce operation: open, close, read, write, ioctl
+	+ Hệ điều hành cho phép sau khi tạo ra device file sẽ được quyền đăng ký các hàm open, read, write, chmod, chowner...vào device file đấy.
+		-> Nếu driver đăng ký những hàm đấy thì khi user thực hiện các hàm đấy trên tầng user, những hàm tương ứng ở dưới driver sẽ được tạo ra.
+
+	+ struct file_operations chứa một loạt con trỏ hàm, nhưng nó để trống, đang để giá trị là NULL. Bạn gọi ra struct này, khai báo từng con trỏ hàm của nó sẽ trỏ vào hàm của các bạn.
+		-> giả sử struct file_operations có tên là fops
+		-> sau khi gán rồi thì phải có bước gán fops vào device file
+		-> ở bước cdev_init(), truyền vào &fops
+
+
+
+	->  Luồng thực hiện rất là logic:
+		+ B1: xin cấp phát động bộ số major và minor number
+			-> Xin cấp phát chứ không dùng luôn một số nào đấy vì ở thời điểm chạy, có thể có 1 device khác dùng bộ số này rồi.
+
+		+ B2: alloc memory cho struct deivce đấy
+
+		+ B3: khởi tạo thông tin cho device đấy
+			- trường owner
+			- fops
+
+		+ B4: đăng ký deivce với hệ thống.
+		+ B5: khởi tạo device file.
+
+	+ OS không bao giờ quan tâm bạn làm cái gì cho các hàm đăng ký trong fops, nó cũng không biết phần cứng hoạt động như thế nào, có những thanh ghi gì. Nhiệm vụ của nó là chỉ gọi ra các hàm đấy thôi.
+		-> trong các hàm đấy muốn làm gì cũng được.
+
+	+ giả sử tạo character deivce thành công có tên ex_hello, insmod vào hệ thống
+		- giả sử echo 5 > /dev/ex_hello: các hàm được gọi là open, write, close
+		- cat /dev/ex_hello: open, read, close.
+
+
+6. Destroy device file
+	cdev_del
+	device_destroy
+	class_destroy
+	unregister_chrdev_region
+		-> cấp phát từ trên xuống -> hủy thứ tự từ dưới lên
+
+
+7. ioctl
+	+ phần cứng hỗ trợ hàm riêng, gọi là hàm để config phần cứng
+
+	+ chẳng hạn đọc/ghi data từ chuột, đọc/ghi data xuống màn hình...Tuy nhiên trước khi đọc/ghi được data đấy thì phải có bước config phần cứng đấy. 
+		- Chẳng hạn hệ thống boot lên thì config màn hình là 800x600, hay là full hd...
+		- Thông thường khi viết driver dùng 1 hàm riêng biệt để config cho phần cứng: ioctl
+		- ioctl giống read/write, nhưng đặc biệt là cho phép truyền 1 chuỗi command line là 1 số int bất kỳ
