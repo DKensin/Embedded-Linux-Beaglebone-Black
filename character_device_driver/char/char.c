@@ -21,10 +21,10 @@ static ssize_t sample_write(struct file *file, const char __user *buf,
 {
 	memset(data, 0, 100);
 	copy_from_user(data, buf, len);
-	if (0 == strcmp("1", data))
-		led_on();
-	else
-		led_off();
+	//if (0 == strcmp("1", data))
+	//	led_on();
+	//else
+	//	led_off();
 	printk("write = %s\n", data);
 	return len;
 }
