@@ -1,0 +1,170 @@
+1. Xử lý event gồm 2 phần: xử lý interrupt và exception
+	-> đa phần công việc là xử lý ngắt
+
+	+ Trong hệ thống nhúng event là gì: lấy ví dụ, khi user nhấn nút, thì sự kiện nhấn nút đấy được gọi là event.
+
+	+ Trong source code lập trình không thể biết khi nào sự kiện đấy nó sẽ xảy ra. Không thể lậ trình điều khiển người dùng bấm nút được, chỉ có thể lập trình xử lý sự kiện người dùng bấm nút.
+		-> cái này gọi là event
+
+	+ Event có thể đến bất cứ lúc nào với tần suất ngẫu nhiên, không thể lường trước được.
+		-> xử lý event: interrupt hoặc polling
+
+	+ Excepption không phải đến từ bên ngoài mà đến từ bên trong hệ thống, bên trong source code của chính chúng ta.
+		- Nó cũng là lỗi không thể lường trước được.
+		- Thông thường exception đến từ các lỗi lập trình.
+
+
+2. Interrupt
+	+ Là 1 sự kiện tạo ra bởi phần cứng khi mà có tác nhân nào đó đến từ bên ngoài.
+
+	+ Chia thành 4 loại:
+		- hardware interuppt: ngắt gây ra bởi phần cứng: ví dụ nhấn nút nhấn
+
+		- software interuppt: ví dụ code C, trong code C đấy gọi ra hàm, thì hàm đấy sẽ tạo ra ngắt trong hệ thống 
+			-> ngắt này được gọi là software interrupt
+			-> gọi là soft vì nó được tạo ra bởi source code
+
+		- ngắt có thể bỏ qua: ngắt mà có thể lập trình bằng source code để tạm thời ignore nó trong 1 khoảng thời gian nào đấy mong muốn
+
+		- ngắt không thể bỏ qua: ví dụ mất điện, chương trình không thể bỏ qua ngắt mất điện đấy, hoặc user ấn nút reset...
+
+
+
+3. Vector table
+	+ Làm sao để hệ điều hành xử lý được ngắt / exception?
+
+	+ Hệ điều hành có bảng được gọi là vector table
+		- bảng có 2 cột
+		- một cột là số hiệu của ngắt / exception đấy
+		- cột thứ 2 chứa địa chỉ của hàm xử lý ngắt / exception đấy 
+		- địa chỉ này trỏ đến 1 vùng nào đấy trong RAM, vùng trong RAM đấy là nơi chứa source code của hàm xử lý sự kiện đấy
+
+		-> cách lập trình xử lý sự kiện:
+			- viết các hàm xử lý sự kiện đấy
+			- sửa lại bảng vector table, sửa lại địa chỉ của các hàm trong bảng này bằng các địa chỉ trỏ vào các hàm của chúng ta
+
+
+4. Xử lý ngắt/exception
+	+ Xử lý ngắt:
+		- không nên sleep trong hàm xử lý ngắt vì dễ gây ra lỗi trong hệ thống
+		- phải xử lý nhanh nhất có thể
+
+	+ Exception:
+		- không thể bị bỏ qua
+		- không bị ngắt quãng, ngắt có thể bị ngắt quãng nếu ngắt có độ ưu tiên cao hơn đến
+
+	+ Xử lý ngắt xong quay về chuơng trình chính để chạy tiếp, còn xử lý exception thì có thể nó không quay về chương trình chính đang chạy
+		- ví dụ chia cho 0, hoặc truy cập con trỏ NULL thì xử lý exception xong sẽ không chạy tiếp đoạn code phía dưới, vì đã sai là sai luôn
+
+
+5. Lập trình xử lý ngắt
+	+ Viết hàm xử lý ngắt
+
+	+ Đăng ký với hệ điều hành về hàm xử lý ngắt đấy
+		- request_irq(unsigned int irq, irqreturn_t handler, unsigned long irq_flags, const char* devname, void* dev_id);
+
+		- tham số đầu tiên là số hiệu ngắt
+			+ trong vi điều khiển: module này dùng ngắt nào, dùng số hiệu đấy để đăng ký ngắt
+
+			+ Linux không như vậy, Linux có 1 bước mapping lại ngắt nữa
+				- giả sử trong bảng vector table, đăng ký hàm ngắt để xử lý ngắt có số hiệu là 4, thì số hiệu irq truyền vào cũng không phải là số 4
+
+				- nó phải có 1 bước cấp phát mapping với 1 số ngắt virtual nào đấy (virtual irq), tại vì Linux không làm việc với address thật mà thông qua virtual memory
+
+				- để lấy ra só hiệu virtual: gọi hàm gpio_to_irq()
+
+		- tham số thứ 2: con trỏ hàm trỏ vào hàm xử lý ngắt của các bạn
+
+		- tham số thứ 3: flag của việc đăng ký ngắt đấy
+			+ Ví dụ bạn đăng ký ngắt này, nhưng bạn có muốn share ngắt đấy với cả người khác hay không
+
+			+ Tại vì có trường hợp 1 ngắt nhưng có nhiều handler cùng đăng ký xử lý
+
+			+ Ví dụ 3 cổng USB, 1 cổng cắm chuột, 1 cổng cắm bàn phím, 1 cổng cắm vào webcam...Cả 3 loại thiết bị đấy đều có khả năng raise ra ngắt, và đều có những hàm xử lý ngắt riêng trong driver
+				- module USB thông thường chỉ có 1 hoặc 2 ngắt vật lý
+
+				- 3 thiết bị kia khi đăng ký hàm xử lý ngắt của riêng nó thì đều phải share chung cho nhau
+
+			+ Khi 1 ngắt được share cho nhiều handler, khi ngắt đấy xảy ra thì hệ điều hành sẽ gọi tất cả các handler ra
+
+			+ Các handler khi được gọi sẽ phải check xem có đúng ngắt đấy có đúng thuộc về thiết bị của mình không
+
+		- tham số thứ 4: tên của loại thiết bị gây ra ngắt đấy
+
+		- tham số thứ 5: con trỏ trỏ đến 1 vùng dữ liệu nào đấy, để chuyển dùng cho handler kia dùng đến
+
+	+ Hàm free ngắt: free_irq(unsigned int irq, void* dev_id);
+		- dev_id có thể để NULL, không nhất thiết phải truyền vào
+
+		- nếu truyền vào dev_id, khi mà ngắt được gọi ra, hàm xử lý ngắt đấy sẽ được truyền vào struct dev_id đấy
+
+		- thường để là NULL
+
+	+ Hàm xử lý ngắt: irqreturn_t (*handler) (int, void *dev_id)
+		- tham số đầu tiên là số hiệu ngắt
+
+	+ xem thông tin từ lúc bật máy đến giờ có bao nhiêu ngắt được tạo ra: cat /proc/interrputs
+		- cột 1: interrupt line. Các interrupt line này sẽ được phân chia cho CPU nào xử lý
+
+		- cột CPU: các số chính là số lần CPU đấy xử lý ngắt đấy
+
+		- cột tiếp theo là kiểu ngắt đấy
+
+		- cột cuối cùng: kernel module nào đăng ký xử lý ngắt đấy
+			+ chính là devname truyền vào cho hàm request_irq()
+
+
+6. Top half và bottom half
+	+ Ngắt có độ ưu tiên rất là cao, khi mà ngắt chưa hoàn thành thì CPU sẽ không dành các cycle của nó để xử lý các công việc khác
+		-> code hàm xử lý ngắt phải thực hiện càng nhanh càng tốt
+
+		-> nhưng có những trường hợp không thể xử lý nhanh được thì phải làm như thế nào?
+
+		-> nảy sinh ra ý tưởng: phân chia lại công việc trong hàm xử lý ngắt đấy, công việc nào mà xử lý quá lâu họ sẽ đẩy ra khỏi hàm xử lý ngắt, lập lịch cho nó để nó được xử lý sau
+
+		-> cơ chế lập lịch cho 1 phần công việc của ngắt đấy gọi là cơ chế bottom half: ngắt xảy ra thì ngắt lập lịch lại 1 phần công việc để xử lý sau, phần công việc được lập lịch để xử lý sau được đẩy ra khỏi ngắt được gọi là bottom half
+
+		-> phần công việc vẫn xử lý trong ngắt đấy thì được gọi là top half
+
+		-> những công việc mà có thể xử lý được về sau thì lập lịch bỏ ra khỏi hàm ngắt, phần công việc nào không thể bỏ ra được, phải xử lý trong hàm ngắt thì gọi là top half
+
+	+ Ví dụ: viết driver cho port Ethernet. Mỗi khi có bản tin đến port Ethernet thì Ethernet gây ra 1 cái ngắt. Trong hàm xử lý ngắt thì phải xử lý bản tin đấy. Công việc xử lý ngắt gồm rất nhiều: copy bản tin từ vùng DMA của port Ethernet vào trong RAM, sau đấy xử lý bóc tách bản tin đấy, checksum...
+		- top half: copy data từ mạng vào RAM
+			-> copy được rồi thì xử lý sau cũng được vì bản tin sẽ không bị mất
+			
+			-> nếu không xử lý luôn thì có thể bản tin sẽ bị mất
+
+		- bottom half: xử lý bản tin: bóc tách, checksum, tìm xem bản tin gửi đi đâu...
+
+	+ anh Phú lập trình cũng chưa phải xử lý bottom half bao giờ, vì đa phần lập trình SPI, CAN...
+
+	+ Lưu ý khi xử lý top half
+		- không được sleep, ví dụ hàm kmalloc nếu gọi ra theo kiểu bình thường, không truyền những cờ đặc biệt thì thi thoảng gây ra sleep, lúc sleep lúc không
+			-> để tránh gây ra sleep gây lỗi, thì truyền vào cờ GFP_ATOMIC
+
+		- về hàm kmalloc: Trong hệ điều hành nó sẽ có 1 vùng gọi là Memory Pool trong RAM, tất cả kmalloc được truyền cờ GFP_ATOMIC thì sẽ tìm đến memory trong pool này và trả về luôn
+			-> rất nhanh và không gây sleep
+
+			-> nếu không truyền vào GFP_ATOMIC thì không tìm trong pool mà tìm trong các vùng trống trong RAM, giả sử trống 10 khoảng, mỗi khoảng 10 byte, cần cấp phát 50 byte thì OS tiến hành dồn phân mảnh để lấy đủ 50 byte. Trong quá trình dồn phân mảnh thì nó sẽ sleep để chạy chương trình dồn phân mảnh
+
+			-> nếu truyền vào GFP_ATOMIC mà vùng pool này hết rồi, ngoài vùng pool có những vùng phân mảnh như thế thì sẽ vẫn trả về fail luôn
+
+		- trong ngắt mà phải có hàm delay() thì sao: ví dụ trong ngắt cần phải set giá trị thanh ghi nào đấy bằng 5 chẳng hạn, đọc rm thì thanh ghi này sau khi set giá trị cho nó rồi thì 5ms sau phải đọc lại để verify xem đã được set hay chưa, ví dụ thế -> làm thế nào delay được trong ngắt -> thay vì dùng sleep thì gọi hàm delay(), hàm delay() delay công việc lại nhưng không phải là sleep.
+			+ sleep() nó nhường CPU cho công việc khác thực hiện. Ví dụ sleep 2s thì nhường CPU 2s cho công việc khác thực hiện. Sau 2s có thực hiện tiếp công việc đấy không thì hên xui, không chắc chắn sau 2s đấy sẽ thực hiện tiếp công việc tiếp của bạn
+
+			+ delay 2s thì trong 2s đấy vẫn dùng CPU, CPU sẽ chạy trong câu lệnh delay này
+
+		- top half không nên gọi prink() vì nó cũng có thể gây sleep. Khi prink ghi log ra ngoài màn hình thì thường nó sẽ sleep lời gọi đi để chạy chương trình ghi ra màn hình
+
+
+7. Disable interrupt
+	+ Khi nào cần phải disable ngắt. Ví dụ, lập trình module, đọc rm quy định thời gian ghi giá trị đầu tiên trong module đấy đến khi hoàn thành quá trình config module đấy không được quá 2ms, nếu quá 2ms thì nó sẽ reset các thanh ghi trong module đấy đi
+		-> mong muốn là trong thời gian config module đấy thì disable ngắt đi
+
+		-> nếu đang config mà có ngắt xảy ra thì quá trình config bị ngắt quãng, có thể hơn 2ms
+
+		-> disable ngắt đi
+
+	+ Hàm hỗ trợ disable ngắt
+
+	+ Hàm hỗ trợ check xem có đang trong ngắt hay không
