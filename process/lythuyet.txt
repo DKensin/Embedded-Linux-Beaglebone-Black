@@ -1,32 +1,330 @@
-tien trinh: chuong trinh duoc nap vao he thong, co su dung tai nguyen
-chuong trinh: binary nhi phan
+1. Lý thuyết học trên lớp:
+	+ tiến trình và chương trình:
+		- tiến trình: chương trình được nạp vào hệ thống, có sử dụng tài nguyên
+		- chương trình: binary nhị phân
 
-process
-program
+	+ process và program program là 1 process
 
-mac du khong chay nhung no van cham di, vi du tren window thi no luu ve't lai 
-lich su -> uu: nhanh hon cho nguoi dung, cham hon ve mat he thong (do check database)
+	+ mặc dù không chạy nhưng nó vẫn chậm đi, ví dụ trên Windows thì nó lưu vết lại lịch sử -> ưu: nhanh hơn cho người dùng, chậm hơn về mặt hệ thống (do check database)
 
-2 truong hop bi dong ket thuc:
-	bi kill tu process ben ngoai
-	chay gap loi
+	+ 2 trường hợp bị động kết thúc:
+		- bị kill từ process bên ngoài
+		- chạy gặp lỗi
 
-wifi co backdoor: gap loi thi nha mang cai cac goi va' loi~ ( backdoor co the la user an? )
+	+ wifi có backdoor: gặp lỗi thì nhà mạng cài các gói vá lỗi (backdoor có thể là user ẩn?)
 
-bien moi truong: luc doc ghi file dung duong dan tuyet doi, tranh loi ve bien moi truong pwd
+	+ biến môi trường: lúc đọc/ghi file dùng đường dẫn tuyệt đối để tránh lỗi về biên dịch môi trường pwd
 
-fork nhan doi -> nhan doi bang file talbe -> file table giong nhau -> tro cung vao 1 stdout
+	+ fork nhân đôi -> nhân đôi bảng file table -> file table giống nhau -> trỏ cùng vào 1 stdout
 
-ung dung fork(): goi ra 1 chuong trinh chay moi task moi, vi du trong Powerpoint goi ra chay chrome 
+	+ ứng dụng fork(): gọi ra 1 chương trình chạy task mới, ví dụ trong powerpoint gọi ra chạy chrome
 
-tao da luong: hoac fork() hoac create thread moi
+	+ tạo đa luồng: hoặc fork() hoặc create thread mới
 
-tao ra chuong trinh moi ma van giu chuong trinh cu: fork truoc, sau do exec()
+	+ tạo ra chương trình mới mà vẫn giữ chương trình cũ: fork() trước, sau đó exec()
 
-argv[0] convert thanh bien moi truong PWD
-exec() phu thuoc vao bien moi truong PATH, trong PATH tim den duong dan trong exec()
+	+ argv[0] convert thành biến môi trường PWD
+		exec() phụ thuộc vào biến môi trường PATH, trong PATH tìm đến đường dẫn trong exec()
 
-zoobie process gay treo he thong mac du no khong dung memory, cpu vi OS quan ly he thong ke ca Zoobie, phan OS danh ra cho Zoobie day gay treo he thong
+	+ zoombie process gây treo hệ thống mặc dù nó không sử dụng memory, cpu vì OS quản lý hệ thống kể cả zoombie, phần OS dành ra cho zoombie đấy gây treo hệ thống
 
-Ban chat debug: chen symbol (code C) vao ma may , release chi ca chuong trinh chay o cac file 0/1, va o debug co the tim nguoc lai ma nguon (van de bao mat)
+	+ Bản chất debug: chèn symbol (code C) vào mã máy, release chỉ chuong trình chạy ở các file 0/1, và ở debug có thể tìm ngược lại mã nguồn (vấn đề bảo mật)
 
+ ---->>> phần sau trở đi là lý thuyết xem trên video <<<----
+
+ 2. Mục tiêu của bài:
+	+ Bản chất của process trong hệ điều hành là gì?
+	+ Cách hệ điều hành tạo ra process và quản lý nó như thế nào
+	+ Các kỹ thuật lập trình process
+		- tạo process
+		- quản lý process
+		- kết thúc process
+
+
+3. Bản chất process
+	+ process là  1 tiến trình, là thực thể được khởi tạo từ file chương trình nằm trên ổ cứng. Tiến trình là 1 thực thể bắt đầu sử dụng tài nguyên của hệ điều hành như cpu, bộ nhớ, ngoại vi...
+
+	+ tiến trình được bắt đầu và kết thúc như thế nào
+		- chương trình trên vi điều khiển:
+			+ bắt đầu ở hàm main, thực ra khi lúc boot lên sẽ có những đoạn code ẩn
+			+ kết thúc: khi mất nguồn điện
+
+		- trên Linux:
+			+ bắt đầu từ hàm main (chính xác hơn thì là câu lệnh đầu tiên trong hàm main(), không phải là int a, int b... chính xác hơn nữa thì là operation đầu tiên)
+
+			+ trước khi hàm main được start, hệ điều hành sẽ chạy các đoạn code ẩn trước để phục vụ cho hàm main đấy
+				- ví dụ khai báo biến global thì trình biên dịch sẽ khởi tạo mặc định biến đấy có giá trị bằng 0 -> phải có đoạn code khởi tạo biến bằng 0 trước khi start hàm main
+
+				- ví dụ tiếp theo là khi 1 chương trình C được chạy, thì với 3 file stdin, stdout, stderr, mặc định khi chương trình C được start thì 3 file đấy sẽ được mở ra trước cả hàm main -> đoạn code nào mở ra 3 file đấy -> thuộc về các đoạn code ẩn
+
+	+ kết thúc chương trình / tiến trình:
+		- chủ động kết thúc: trong code gọi ra các hàm để kết thúc chương trình: ví dụ return, exit,...
+
+		- bị động kết thúc:
+			+ ví dụ truy cập con trỏ NULL -> chương trình kết thúc: bị OS kết thúc đi chứ không phải nó muốn
+
+			+ hoặc đang chạy thì user ấn Ctrl + C, hoặc gửi câu lệnh kill -9 đến process -> tiến trình kết thúc 1 cách bị động
+
+		- cho dù tiến trình kết thúc 1 cách chủ động hay bị động thì luôn luôn trả về 1 giá trị nào đấy cho process cha
+			+ ví dụ return 0 trong main
+
+			+ hoặc khi kill -9 hoặc truy cập con trỏ NULL thì luôn luôn có 1 giá trị trả về cho process cha
+
+			+ process cha dựa vào giá trị trả về đấy để biết được trạng thái kết thúc -> rất quan trọng trong dự án thực tế làm về sau
+				-> ví dụ chương trình chạy lỗi -> debug
+				-> muốn debug thì phải dựa vào giá trị trả về để biết lỗi gì
+
+	+ sự ảnh hưởng môi trường bên ngoài đến chương trình:
+		- trên vi điều khiển: 1 mình chương trình vi điều khiển đấy được sở hữu toàn bộ hệ thống, toàn quyền và không bị cái gì ảnh hưởng đến nó
+
+		- chương trình trong hệ điều hành: 
+			+ chương trình chỉ là 1 thực thể nhỏ trong hệ điều hành
+
+			+ chương trình khi chạy bị ảnh hưởng bởi rất nhiều yếu tố ở bên ngoài -> ảnh hưởng kết quả chạy chương trình
+				- cùng 1 đoạn code, khi chạy chịu 2 thống số môi trường khác nhau thì sẽ cho ra 2 kết quả khác nhau.
+
+				- ví dụ: fp = fopen("/home/phula/text.txt", "w");
+					+ với user là phula thì ok
+
+					+ với user khác thì chưa chắc mở ra được
+						-> bản thân code không bị lỗi nhưng do chạy bởi user khác nhau
+
+					+ đoạn code chạy bởi các user khác nhau nó sẽ ảnh hưởng đến môi trường xung quanh của process thực thi đoạn code đấy
+
+				-> các tham số môi trường bao quanh process có thể ảnh hưởng đến kết quả cuối cùng của đoạn code của các bạn
+
+				-> khi lập trình trên hệ điều hành luôn luôn quan tâm đến môi trường thực thi chương trình sẽ như thế nào
+
+				-> ví du nhiều khi code chạy trên môi trường developement thì rất ổn, nhưng bê nguyên đoạn code đấy chạy trên máy user thì có thể bị lỗi
+					-> 1 trong các nguyên nhân có thể do môi trường đã khác nhau rồi
+
+
+3. Các thông số môi trường ảnh hưởng đến process
+	+ command line argument:
+		- ví dụ chạy câu lệnh: ls -l
+			+ bản chất ls là 1 chương trình nằm trong thư mục bin
+
+			+ có thể check bằng việc ls /bin/ls
+
+			+ chạy ls -l cho 1 kết quả khác, ls -a cho 1 kết quả khác -> làm thế nào để biết được truyền vào tham số là -l hay -a
+				-> dựa vào tham số argument của main: trong hàm main của ls sẽ truy cập vào 2 biến: argc và argv
+
+		- argc: số tham số truyền vào
+			+ tham số đầu tiên mặc định là tên của chương trình
+
+			+ tham số thứ 2 là option đầu tiên
+
+		- argv: mảng 2 chiều, mỗi 1 phần tử trong mảng là 1 chuỗi string trỏ vào option truyền vào của chương trình đấy
+			+ phần tử đầu tiên là đường dẫn của chương trình đấy
+
+			+ phần tử thứ 2: option đầu tiên truyền vào: 
+						argv[1] = -l
+
+		- dùng để tạo chương trình C linh hoạt: viết 1 chương trình C có thể xử lý nhiều option, user chạy chương trình đấy với option truyền vào
+
+	+ enviroment list:
+		- mỗi khi chương trình của bạn start, hệ điều hành cung cấp cho bạn 1 list các tham số môi trường, không cần define mà tự có trong chương trình của bạn luôn
+
+		- vẫn có quyền truy cập thông qua các biến môi trường này: 
+			+ khai báo biến extern chả **environ
+
+			+ truy cập biến môi trường thông qua biến này
+
+			+ lấy giá trị của 1 biến môi trường cụ thể: char *getenv(const char *name);
+
+			+ bản chất của biến này: là 1 mảng 2 chiều giống argv, mỗi 1 phần tử trong mảng này trỏ đến chuỗi string của các biến môi trường
+				- cấu trúc của chuỗi string: tên = giá trị
+
+		- tác dụng: ví dụ yêu cầu viết chương trình C lấy ra tên user hiện tại của chương trình C đấy, hoặc ip của máy: thì có thể truy cập vào biến môi trường, đọc ra giá trị của biến môi trường được yêu cầu
+
+
+4. Cấu trúc bộ nhớ của process (chính là memory layout)
+	+ các vùng: text, initial data, uninitial data (bss), heap, stack
+
+	+ câu hỏi: không gian bộ nhớ của chương trình C rất là liền mạch, vậy theo mọi người khi tổ chức bộ nhớ trên RAM (bộ nhớ physical) thì liệu nó có thực sự liền mạch hay không?
+		- câu trả lời là không
+
+		- ví dụ 1 chương trình C yêu câu 3GB bộ nhớ RAM để nó chạy, thì rất khó để có 3GB bộ nhớ RAM trống, liền mạch
+
+		- thực tế: các vùng nhớ của 1 chương trình C không liền mạch
+			+ nó cần 1 vùng dải địa chỉ liền mạch
+			+ khi tổ chức trên RAM: vùng đấy không cần liền mạch do cớ chế virtual memory
+
+		- bản thân chương trình C không hề biết đến vùng nhớ của nó trên RAM, nó cũng nghĩ bản thân nó là 1 tổ chức bộ nhớ liền mạch. Nhưng thực tế nó sẽ được phân bố trên RAM một cách rời rạc.
+
+	+ cấp phát bộ nhớ động cho process: malloc(), free()
+		- memory leak: chỉ tồn tại theo vòng đời của tiến trình
+
+		- cho dù cấp phát bao nhiêu GB đi chăng nữa, ngay khi tiến trình kết thúc, toàn bộ vùng memory leak sẽ được tự động free hết, cho dù không gọi hàm free()
+			+ chương trình C có vòng đời ngắn, ví dụ vài giờ thì leak vài MB, chục MB, trăm MB thì cũng không phải là vấn đề lắm, vì kết thúc là mất.
+
+			+ memory leak gây nguy hiểm nếu process chạy lâu dài, hàng tháng hàng năm, vì mỗi ngày mà leak 1GB thì 1 năm leak 365GB
+
+			+ chương trình vi điều khiển thường quan tâm có gây leak bộ nhớ hay không
+
+			+ có những kỹ thuật debug riêng cho memory leak, check được có gây leak hay không: ví dụ cho chương trình chạy khoảng 100 hoặc 200 tính năng, kiểm tra bộ nhớ trước khi chạy và sau khi chạy xem có tăng dần hay không, nếu tăng mãi thì có vẻ đã bị leak memory
+
+
+5. Shared Library (thư viện động)
+	+ Lập trình vi điều khiển: hầu như không dùng đến thư viện động
+
+	+ Thư viện động chỉ có ý nghĩa khi hệ thống có khái niệm file
+
+	+ Thư viện động là 1 file, được build ra như chương trình C bình thường, tạo ra 1 file, nó không được gọi là program vì bản thân bên trong nó không có hàm main, bản thân bên trong nó có 1 list các function, để cho hàm main của chương trình khác gọi nó ra
+
+	+ Khác với thư viện tĩnh, với thư viện tĩnh khi bạn gọi ra 1 hàm bất kỳ trong thư viện đấy, code của hàm đấy được generate vào code của các bạn
+		+ ví dụ: giả sử bên trong stdio.h có hàm
+			A() {
+				a = b + c;
+			}
+
+		bên trong hàm main của mình gọi ra hàm A:
+			main() {
+				A();
+			}
+
+			-> khi build, bên trong code C của mình có code của hàm A luôn, chèn code của hàm A vào
+
+			-> cơ chê này gọi là static library
+
+	+ với shared library (dynamic library), thì khác hẳn
+		- khi gọi hàm A trong thư viện động, nó không cần genrerate code của hàm A vào code của các bạn nữa
+
+		- Cơ chế: khi gọi hàm A trong thư viện động, nó tiến hành load thư viện đấy vào RAM, tìm địa chỉ của hàm A đấy trong RAM trả về chương trình của các bạn. Chương trình gọi hàm A thông qua cơ chế địa chỉ
+
+	+ So vói thư viện tĩnh, thư viện động có những ưu nhược điểm gì:
+		- Ưu điểm:
+			+ Tiết kiệm bộ nhớ: ví dụ có 2 chương trình cùng dùng hàm A của thư viện động -> trong 2 chương trình không cần code của hàm A -> tiết kiệm được vùng code đấy trong bộ nhớ RAM
+
+			+ chỉ cần load 1 lần thôi: 2 chương trình cùng gọi, khi chương trình đầu tiên gọi thư viện động, thư viện động được nạp vào RAM. Còn chương trình thứ 2 gọi thư viện động thì thư viện động không cần nạp vào RAM lần nữa mà nó sẽ tìm địa chỉ nó được nạp vào RAM, trả về cho chương trình thứ 2.
+				-> cả 2 chương trình cùng truy cập vào vùng RAM đấy
+
+			+ Thư viện động sau khi không có chương trình nào sử dụng đến nó nữa, nó sẽ được unload, tự động free đi khỏi bộ nhớ RAM
+
+			+ Ví dụ: game mà chứa các map có file code lớn, ví dụ hàng trăm MB, nếu dùng thư viện tĩnh thì khi user không chơi map đấy thì vẫn phải chứa vùng map đấy trong bộ nhớ RAM -> không hợp lý
+				-> thay vì đấy dùng source mô tả map build ra thư viện động, khi user chơi map đấy thì thư viện động mới được load vào RAM, khi user không dùng đến nữa thì nó được free đi
+
+			-> nếu thư viện động nó tiết kiệm bộ nhớ như vậy thì tại sao cần dùng thư viện tĩnh làm gì?
+
+		- Nhược điểm: vì khi nào bạn chạy bạn dùng đến nó thì nó mới tiến hành nạp từ ổ cứng vào RAM -> tốc độ của nó chậm: từ lúc yêu cầu dùng cho đến lúc được dùng mất 1 khoảng thời gian, thư viện tĩnh thì không cần mất khoảng thời gian đấy nữa
+
+
+6. Cách hệ điều hành điều khiển tiến trình
+	+ process identifier: pid dùng để quản lý các tiến trình, mỗi một tiến trình sẽ được gán 1 con số pid
+		- số pid là duy nhất
+
+		- được gán cho mỗi tiến trình mỗi khi nó được tạo ra
+
+		- hệ điều hành quản lý tiến trình thông qua các số pid đấy
+
+		- trong hệ thống có những số pid đặc biệt, ví dụ init process: pid = 0
+
+		- ví dụ viết driver dưới kernel, và muốn driver giao tiếp với tiến trình ở tầng user -> tầng user phải truyền xuống driver pid của nó, driver thao tác truyền gửi data thông qua pid
+
+	+ tạo process: hàm fork(): tạo bản sao của tiến trình gọi nó: giả sử tiến trình A gọi hàm fork() sẽ tạo ra 2 tiến trình A và A' giống hệt nhau, pid khác nhau
+
+		- trong 1 process, nếu nó lỗi thì nó chỉ lỗi trog process đấy thôi, chứ không ảnh hưởng đến process khác
+			-> lúc fork() ra 1 tiến trình khác để làm 1 công việc khác, nếu 1 trong 2 tiến trình bị lỗi thì nó không ảnh hưởng đến tiến trình còn lại
+
+			-> khi code, nếu cần thao tác với những đoạn code dễ gây lỗi, có thể fork() ra
+
+			-> hoặc ví dụ có 2 chương trình C là a và b, a chạy trước, đến 1 thời đểm nào đó  muốn chạy b thì có thể fork() ra, trong process con chạy b
+
+		- fork() có giá trị trả về:
+			+ 0: đoạn code đang nằm ở process con
+
+			+ 1 số khác 0: đoạn code bị nằm ở procees cha
+
+		- sau khi cha kết thúc thì con vẫn có thể chạy tiếp được, tại vì nó là 2 tiến trình riêng biệt
+
+	+ tạo chương tình mới sau khi fork(): dùng exec()
+		- thay thế chương trình hiện tại bằng bộ nhớ của chương trình mới
+
+		- ví dụ: 
+			main() {
+
+				exec();
+
+				do_something();
+			}
+
+			-> không bao giờ đoạn code do_something() được thực hiện, vì sau khi exec() nó sẽ tiến hành thay thế không gian bộ nhớ của tiến trình hiện tại bằng các binary của chương trình mới -> trong chương trình mới không còn đoạn code do_something() đấy nữa
+
+		- sau khi exec() vẫn giữ nguyên pid đấy
+
+	+ kết thúc process:
+		- chủ động: return, exit, nhưng lưu ý: kể cả gọi return trong hàm main() thì bản chất vẫn có 1 hàm exit() được gọi ra
+			- gọi return hay exit thì cả 2 trường hợp đều gọi ra 1 hàm exit chung
+
+			- trong hàm exit() chung đấy tiến hành các công việc:
+				+  free memory cấp phát
+				+ đóng các file mở ra...
+
+			- khi exit hay return thì giá trị truyền vào trong hàm exit hay trong câu lệnh return sẽ được trả về cho tiến trình cha
+
+			- cha kết thúc trứớc khi con kết thúc -> con sẽ được đổi cha, dùng init process làm cha của nó
+
+			- sau khi chương trình con gọi return hay exit, nó sẽ gửi đi 1 signal: SIGCHILD cho tiến trình cha, chỉ khi tiến trình cha except signal đấy thì tiến trình con mới thực sự kết thúc hoàn toàn (biến mất khỏi hệ thống)
+
+				+ nếu không, tiến trình con vẫn nằm đấy, chuyển trạng thái nó đi
+
+				+ dùng câu lệnh: ps -aux: trạng thái tất cả process: R(running), S(sleep), Z(zombie)
+
+		- zombie process:
+			+ các chương trình con nó đã kết thúc
+
+			+ sigchild không được cha accept
+
+			+ không thế dùng sig kill để kill nó đi
+
+	+ except signal: wait()
+		- khi gọi wait() thì nó sẽ block chương trình ở câu lệnh wait đấy cho đến khi nó nhận được sigchild từ con gửi về -> giúp except signal từ chương trình con gửi về
+
+		- pid_t wait(int *wstatus): truyền vào con trỏ status, con trỏ này chứa giá trị trả về của chương trình con
+
+		- nếu chương trình con kết thúc bị động (bị crash), thì trong trường status vẫn bắt được, nhưng nó sẽ là mã lỗi của nguyên nhân crash, ví dụ: memory, bị kill...
+
+		- Nếu trong chương trình cha gọi quá nhiều fork(), mà chỉ gọi wait 1 lần thì chuyện gì đã xảy ra? Câu trả lời là hàm wait chỉ nhận được 1 signal bất kỳ thôi, chỉ cần 1 process con gửi về thì sẽ hết block trong hàm wait này và đi xuống phía dưới
+			-> chỉ wait được 1 process con, không wait được nhiều
+
+
+7. user id và group id
+	+ code C khi chạy nó sẽ có 1 quyền nào đấy: cùng 1 chương trình, nhưng chương trình đấy được user có quyền admin chạy thì chương trình đấy quyền hạn của nó sẽ khác, còn normal user chạy thì quyền hạn sẽ khác
+		+ ví dụ 1 chương trình C muốn chỉnh sửa các file hệ thống, thì nếu chương trình đấy chạy với quyền root thì chạy được, còn nếu chạy với normal user thì có thể sẽ bị fail khi thao tác với file của hệ thống
+			-> nguyên nhân do root thì có toàn quyền hệ thống: khi root chạy chương trình thì chương trình có toàn quyền trong hệ thống
+
+			-> normal user bị giới hạn quyền rất nhiều trong hệ thống, khi chạy chương trình nó bị chịu chung giới hạn đấy
+
+	+ hệ điều hành check được quyền của chương trình thông qua user id và group id
+
+	+ mỗi 1 process khi mà chạy nó sẽ bị gán luôn 2 số này vào chương trình đấy luôn. Mỗi khi chương trình làm công việc gì đấy, hệ điều hành sẽ mang 2 số này ra check, nếu user id trùng với user id của root -> có quyền ngang với root, còn trung user id với user khác thì chỉ có quyền hạn của user đấy thôi
+
+	+ thay đổi user id và group id:
+		- hàm setuid(), setgid(): ví dụ trong chương trình C muốn thay đổi quyền cho chương trình C đấy từ normal user sang root chẳng hạn
+
+		- muốn chạy được các hàm này thì cần phải quyền root
+
+
+8. Ngôn ngữ thông dịch
+	+ C: ngôn ngữ biên dịch: code chỉ có ý nghĩa cho con người đọc, khi chạy nó được biên dịch sang mã máy (0/1) để cho máy tính có thể chạy được
+
+	+ ngôn ngữ thông dịch: không cần build, mà chạy trực tiếp được dựa trên file code mình viết ra
+
+	+ bản  thân mã mình viết ra ở dạng text, chỉ có con người đọc được thôi chứ máy tính không đọc được, không hiểu được
+
+	+ Các chương trình thông dịch có cơ chế như sau:
+		- chương trình thông dịch được viết bằng ngôn ngữ biên dịch nào đấy, ví dụ C
+
+		- trước khi chạy 1 file code nào của ngôn ngữ thông dịch, thì phải nạp chương trình thông dịch đấy vào CPU trước đã, nó tiến hành đọc file code đấy và dịch lại thành mã máy và chạy trên CPU
+			-> thông dịch là trung gian đọc file code đấy (file code bằng ngôn ngữ thông dịch) và chuyển cho CPU chạy
+
+	+ tất cả file code của ngôn ngữ thông dịch phải chỉ định đâu là chương trình thông dịch nó, nếu không chỉ định nó sẽ không chạy được
+		- ví dụ: thông dịch cho Shell Script sẽ khác với thông dịch cho Java, khác với Python
+
+		- Shell script cũng là 1 ngôn ngữ thông dịch
+
+
+9. Chạy command line bằng chương trình C:
+	+ hàm system(const char* command): truyền vào 1 chuỗi string, nội dung của chuỗi string đấy chính là câu lệnh command line muốn chạy
+
+	+ cùng 1 công việc, nếu code bằng C để làm bao giờ cũng nhanh hơn gọi câu lệnh system(), system() chỉ có tiện nhưng chậm, dễ lỗi
