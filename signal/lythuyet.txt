@@ -1,6 +1,39 @@
-signal quyen normal khong the kill  bua bai -> permission cua signal, co nhung signal duoc gui di, co signal khong duoc gui di
+Học trên lớp: signal quyền normal không thể kill bừa bãi -> signal có permission: có những signal được gửi đi, có những signal không được gửi đi
 
-define sigset(mask)
-empty sigset
-sigadd
-over write
+1. Đặt vấn đề:
+	+ Trong đời sống hằng ngày, các thiết bị điện tử hay đơn giản hơn là giữa con người với con người muốn giao tiếp với nhau thì phải thông qua 1 cơ chế truyền tin nào đấy. Các thiết bị điện tử rất thích cơ chế truyền tin theo kiểu gửi và nhận tín hiệu với nhau. Trong hệ điều hành cũng hỗ trợ cơ chế giao tiếp như vậy: cơ chế giao tiếp thông qua việc gửi và nhận tín hiệu. Trong hệ điều hành phải có 20 - 30 phương pháp hỗ trợ truyền thông tin cho nhau, signal chỉ là 1 trong các phương pháp, tuy nhiên nó có đặc điểm riêng của nó, khiển cho nó trở thành 1 trong những phương pháp gửi nhận tín hiệu phổ thông nhất.
+
+	+ Đặc điểm của signal: dùng rất là tiện và ngắn gọn, chỉ vài dòng code là có thể dùng đươc -> chính vì lý do đấy nên trong hệ điều hành nó là 1 phương pháp giao tiếp phổ biến
+
+	+ ứng dụng: khi lập trình về hệ điều hành dùng rất là nhiều
+		- gửi tín hiệu cho 1 process khác để bắt nó làm 1 công việc gì đấy theo ý muốn của chúng ta.
+
+		- lấy tín hiệu về, xem thông tin của nó như thế nào...
+
+
+2. Signal
+	+ Bản chất của signal là gì: Hệ điều hành cung cấp cho mỗi 1 process cơ chế xử lý giống như interrupt (software interrupt)
+		- chip có bảng vector table, trong bảng đấy có các hàm xử lý ngắt trong bảng đấy, để địa chỉ của các hàm trong bảng đấy. Mỗi khi có 1 ngắt gửi đến thì con chip gọi ra hàm xử lý ngắt dựa vào bảng vector table
+
+		- signal cũng tương tự như vậy. Hề điều hành sẽ cho mỗi process 1 bảng signal table, bạn cũng sẽ đăng ký các hàm xử lý signal vào trong đấy. Sau khi đăng ký xong thì mỗi khi có 1 signal gửi đến process của các bạn, hệ điều hành sẽ tự động gọi ra hàm xử lý mà bạn đã đăng ký
+
+			-> cơ chế giống ngắt và được gọi là software interrupt
+
+		- giống ngắt, khi nào process nhận được signal thì nó là 1 chuyện ngẫu nhiên, bạn không thể tự quyết định được, signal là phải từ bên ngoài gửi đến cho bạn, chứ không phải bên trong bạn tự tạo ra
+			+ mỗi khi có signal gửi đến, process sẽ xử lý giống như xử lý ngắt: dừng luồng xử lý hiện tại của process, save vào stack, nhảy vào hàm xử lý signal, xử lý xong restore thông tin từ stack, chạy tiếp luồng chương trình chính
+
+		- bảng signal table có 32 ô, mỗi 1 ô cho bạn đăng ký 1 hàm signal handler vào trong đấy
+
+	+ Các trường hợp xảy ra signal
+		- user dùng 1 command line riêng để gửi signal, đó là kill
+
+		- signal được gửi đi từ 1 process khác, các process có thể tự gửi signal cho nhau được -> C có 1 sô hàm để gửi signal
+
+		- chương trình chạy gặp lỗi: truy cập con trỏ NULL, mở file không tồn tại...
+			+ khi truy cập con trỏ NULL, hay là chia cho 0, thì chương trình của bạn bị crash và dừng lại ngay lập tức luôn
+
+			+ bản chất bên trong chính là OS cũng gửi cho các bạn 1 terminate signal nào đấy để khiến cho process cũng bị kết thúc
+
+		- user ấn 1 số tổ hợp phím đặc biệt: ví dụ Ctrl + C, bản chất khi ấn Ctrl + C thì cũng gửi đi 1 signal
+
+	+ phân loại signal
