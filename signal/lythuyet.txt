@@ -36,4 +36,145 @@ Học trên lớp: signal quyền normal không thể kill bừa bãi -> signal 
 
 		- user ấn 1 số tổ hợp phím đặc biệt: ví dụ Ctrl + C, bản chất khi ấn Ctrl + C thì cũng gửi đi 1 signal
 
-	+ phân loại signal
+	+ phân loại signal: giống ngắt
+		- signal có thể ignore: các signal đấy có thể overwrite và khiến cho process của các bạn bỏ qua chuyện xử lý signal đấy khi mà nó gửi đến
+			+ có nhiều signal có thể ignore được
+
+			+ ví dụ signal khi nhấn Ctrl + C
+
+		- signal không thể ignore: ví dụ signal được gửi đến khi process của bạn có đoạn code chia cho 0
+			+ hoặc signal được gửi đến khi truy cập con trỏ NULL, hoặc mở file có fd không hợp lệ
+
+		- signal có thể chủ động lập trình được: signal đấy có thể viết ra hàm handler cho nó, đăng ký hàm handler đấy với hệ điều hành, khi có signal đấy gửi đến thì hệ điều hành sẽ gọi hàm đấy ra
+			+ thông thường, signal có thể ignore được thì cũng có thể lập trình được cho nó
+
+		- signal không thể lập trình được: hệ điều hành có 1 số hàm để xử lý signal đấy, mặc nhiên khi mà có signal đấy gửi đến thì phải gọi ra hàm đấy của hệ điều hành, chứ không phải gọi ra 1 hàm nào khác
+
+
+3. Signal table
+	+ bảng đính kèm với mỗi một process
+
+	+ bảng có 32 ô: coi như là mảng 1 chiều có 32 phần tử, mỗi 1 phần tử là 1 địa chỉ, địa chỉ đấy chính là vùng nhớ trên bộ nhớ lưu trữ hàm signal handler
+
+	+ mỗi khi có signal gửi đến, OS sẽ check trong signal table xem địa chỉ của signal handler đấy có hay không, nếu có thì gọi hàm handler đấy ra thông qua cơ chế điều chỉ
+
+	+ tương tự, khi mà ignore 1 signal, tức là bạn mask 1 mask ignore vào ô trong bảng signal table, khi có signal gửi đến thì hệ điều hành sẽ check, nếu ô đang để là ignore thì nó sẽ không gọi hàm handler ra
+
+	+ khi muốn đăng ký xử lý 1 signal nào đấy theo cách của các bạn, thì các bạn phải tự viết ra 1 hàm handler, đăng ký nó với hệ điều hành, tức là ghi đè địa chỉ hàm handler của bạn vào 1 ô nhớ nào đấy trong bảng sinal table, khi có signal gửi  đến nó sẽ gọi ra hàm xử lý của các bạn
+
+	+ những ô trong bảng signal table có trạng thái read only hoặc read/write
+		- những ô nào là read only thì bạn không thể thay đổi trạng thái của nó, không thể overwrite được hàm xử lý của signal đấy -> signal không thể ignore, cũng không thể đăng ký xử lý được
+	+ mỗi khi 1 process start, hệ điều hành sẽ khởi tạo luôn thông số của process, và khởi tạo luôn bảng signal handler, gán 1 loạt default handler vào bảng signal table
+
+
+4. Lập trình
+	+ include signal.h
+
+	+ viết hàm handler: void sig_handler(int signo):
+		- kiểu trả về: void
+		- biến truyền vào kiểu int
+		- tên hàm là tùy biến tự đặt
+
+	+ đăng ký hàm handler với hệ điều hành:
+		- hàm sighandler_t signal(int signum, sighandler_t handler)
+			+ truyền vào số hiêu hiệu signal muốn đăng ký
+			+ truyền vào con trỏ hàm của handler muốn đăng ký
+
+		- sau đấy mỗi khi có signal nào trùng giá trị với signum được gửi đến thì hàm handler được gọi ra
+
+	+ cách gửi signal đi:
+		- dùng hàm kill(pid_t pid, int signo)
+			+ pid của process mà bạn muốn gửi signal đấy đi
+			+ signo là số hiệu của signal bạn muốn gửi đi
+
+			-> lập trình thực tế: không truyền số hiệu của signal là 1 số int mà truyền vào 1 macro (SIGCHILD, SIGKILL...)
+
+		- permission của process: nếu khi dùng lệnh kill() để gửi signal, nhưng process hiện tại không có quyền permission gửi signal đấy đến process kia, thì có thể câu lệnh kill gửi về mã lỗi (bị fail). Fail đấy không phải là do code sai mà permission của process không có quyền làm việc đấy
+			- thường thì câu lệnh kill gửi được cho tất cả process mà được sinh ra bởi cùng 1 user (có cùng uid)
+
+			- process khác uid: cũng tùy, có thể 1 số signal bình thường có thể gửi được, nhưng với các signal đặc biệt hơn thì có thể không gửi được
+
+				-> hợp lý vì 1process của user A không thể nào được quyền tự động terminate process của user B được
+
+			-> để đảm bảo câu lệnh kill có thể gửi được trọn vẹn cho dù gửi cho pid nào thì nên run chương trình đấy với quyền sudo (quyền  root)
+
+	+ 1 số signal cơ bản:
+		- SIGCHLD: được process gửi về cho process cha khi mà process con kết thúc
+
+		- SIGILL: được gửi đi khi bạn truy cập vào 1 vùng nhớ không hợp lệ
+
+		- SIGINT:  được gửi đi khi user ấn tổ hợp phím Ctrl C
+
+		- SIGKILL: được gửi đi khi gửi signal terminate đi
+
+		- SIGSEGV: liên quan đến memory
+
+	+ ignore một signal:
+		- Khi nào cần phải ignore 1 signal: ví dụ, trong các chương trình setup,  thông thường người ta ngăn cấm chuyện đang chạy dở thì user ấn Ctrl C, chương trình bị terminate thì có thể gây lỗi cả hệ thống (vì chương trình setup đang thao tác với các file hệ thống)
+
+		- để ignore: signal(signal_number, SIG_IGN): gọi hàm signal, truyền vào số hiệu signal muốn ignore, và truyền vào macro SIG_IGN
+			-> dùng cùng 1 hàm với hàm đăng ký signal handler, vì SIG_IGN nó giống như kiểu 1 handler NULL, không xử lý gì cả
+
+			-> thì thực ra SIG_IGN: chính là địa chỉ của 1 handler nào đấy, trong handler này không xử lý gì hết
+
+	+ ignore signal: signal vẫn gửi đến nhưng process không hành xử gì cả, process chỉ đơn giản là vứt signal đấy đi không quan tâm đến nó
+
+	+ block signal: nếu block 1 signal, khi signal đấy được gửi đến mà bạn không xử lý thì nó vẫn nằm ở đấy, khi bạn unblock thì nó sẽ được xử lý ngay lập tức
+
+		-> khác biệt igore và block:
+			- ignore là vứt nó đi luôn
+
+			- block là tạm thời không xử lý, sau khi unblock thì nó xử lý
+
+	+ idea cách block signal:
+		- bảng signal table, để lập trình thao tác với bảng signal này, hệ điều hành cho mình 1 cái gọi là signal mask
+
+		- cái mask đấy là 1 dãy bit, ví dụ bảng signal table có 32 phần tử thì dãy bit của mask sẽ có 32 bit, mỗi 1 bit có trạng thái là 0/1
+
+		- để cập nhật được dữ liêu vào trong bảng signal table, phải làm 2 việc: đầu tiên phải khai báo signal mask, thứ hai là khai báo cách hành xử của cái mask đấy, ví dụ cách hành xử là block
+			-> khi ốp sang bảng table đó là, nó sẽ chỉ update trạng thái là block đối với các signal nào mà được bật mask (giá trị bit tương ứng bằng 1) ở bên bảng signal mask (32 bit) lên
+
+			-> ví dụ bên bảng mask (32 bit), signal có số hiệu là 1 và 3 được bật lên (bit 1 và bit 3 = 1), các signal còn lại đều là 0 hết, thì khi truyền mask này và kèm theo trạng thái block, thì bảng signal table sẽ đổi trạng thái như sau:
+				+ tất cả signal nào có mask được bật lên 1 thì block
+
+				+ còn lại thì giữ nguyên, không thao tác gì cả
+
+		- cơ chế của block signal quan trọng là nó không hỗ trợ hàm nào truyền vào signal và truyền vào trạng thái block để block luôn, mà bắt mình phải khai báo mask, trong mask đấy mình lựa chọn signal nào mà mình thao tác, cái nào để nguyên không thao tác, cái nào mình muốn thao tác thì mình bật bit của nó lên: thứ tự của bit tương ứng trong bảng mask nó sẽ tương ứng với số hiệu của signal
+			+ sau khi khởi tạo xong bảng mask rồi, mình sẽ đăng ký mask đấy kèm với trạng thái mình muốn thao tác, thì nó sẽ update tất cả signal nào có bit tương ứng được bật lên vào bảng signal table
+
+
+5. Lập trình block signal:
+	+ signal mask đấy được khai báo ở struct sigset_t
+
+	+ Đầu tiên, khi mà làm viecj với mask, người ta sẽ fill toàn bộ mask đấy bằng 0 hoặc bằng 1, thường thường đa số fill bằng 0, hàm để fill toàn bộ bit về 0: sigemptyset(), còn bật toàn bộ lên 1: sigfillset()
+
+	+ Sau khi fill toàn bộ bit về 0 rồi, bạn sẽ muốn bật 1 số bit lên bằng 1 bằng hàm sigaddset(): bật bit có số thứ tự là signal number lên 1 trong mask đấy
+		-> nếu bật lên 1 rồi mà muốn bật về 0: sigdelset(), bật bit có số hiệu signal number trong mask đấy về 0
+
+	+ Sau khi mask xong rồi, chúng ta gọi ra hàm để update mask để thao tác với bảng sinal table: sigprocmask()
+		- tham số truyền vào đầu tiên là status bạn muốn cập nhật vào bảng kia: SIG_BLOCK, SIG_UNBLOCK, SIG_SETMASK
+			+ SIG_BLOCK: tất cả signal có bit mask bật lên bằng 1 sẽ bị block
+			+ tương tự SIG_UNBLOCK
+
+			+ SIG_SETMASK: nó sẽ không hề thay đổi trạng thái của bảng signal table, mà chỉ đơn giản lấy data của bảng signal table đấy, cập nhật vào biến sigset_t này. Cập nhật tức là sao, tức là khi truyền SIG_SETMASK, nó sẽ query (truy vấn) trong bảng signal table tất cả signal nào có trường status mà set là block, thì nó sẽ bật lại bit này tương ứng ở trên sigset_t
+
+		- hàm sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
+			+ tham số thứ 2 là mask chúng ta muốn cập nhật
+
+			+ mask hiện tại của signal table sẽ ghi vào oldset
+
+				-> nếu muốn lưu lại trạng thái signal table trước khi cập nhật thì để  vào oldset (khai báo thêm 1 biến oldset nữa)
+
+				-> nếu không cần thì để là NULL: nó sẽ không lưu lại nữa
+
+
+6. signal bị pending
+	+ Khi đang block 1 signal, mà signal đấy gửi đến, thì mặc nhiên nó sẽ bị pending và chưa được xử lý
+
+	+ hệ điều hành hỗ trợ hàm check được các signal đang bị pending: sigpending(sigset_t *set)
+		- đầu tiên khởi tạo mask
+
+		- check tương ứng các signal nào tương ứng các bit bật lên 1 trong mask đấy, có signal của nó đang bị pending
+			+ ví dụ, trong bảng mask có signal thứ 1 và 3 có bit mask được bật lên 1, nó sẽ check trong bảng signal table, nếu signal có số hiệu là 1 và 3 mà có signal đang bị pending, một trong hai signal đấy không cần cả 2, thì hàm sẽ trả về 1 số cho các bạn. Nếu không có hàm nào pending thì nó sẽ trả về 0
+
+			+ mask mà có bit bật bằng 0 thì mặc nhiên nó sẽ không check signal tương ứng bên signal table
