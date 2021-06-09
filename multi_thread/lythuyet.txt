@@ -1,19 +1,249 @@
-1. thread: source co cac luong: doan code thuc thi. Khi co 1 doi tuong X object thi OS quyet dinh xem X object day duoc thuc thi trong luong code nao -> thread
- -> _task_struct
+---------------------------------------------------------------
+Lý thuyết học trên lớp:
+---------------------------------------------------------------
 
-2. Nom na thi thread id tro vao task struct khi khi bao thread
-	Bien 3 tro vao ham xu ly thread
-	Bien 4 la con tro tro vao arg cua ham thread
-3. Main thread la thread dau tien duoc thuc thi
+	+ thread: source code có các luồng: với đoạn code thực thi, khi có 1 đối tượng X object thì OS quyết định xem X object đất được thực thi trong luồng nào -> thread
+		->  _task_struct
 
-4. Ke ca 1 core thi lap trinh da luong van toi uu hon vi co the nhu delay() cho user nhap tu ban phim.... -> da luong xu ly cong viec tot hon
+		+ Nôm na thì thread id trỏ vào task struct khi khai báo thread
+			- biến thú 3 trỏ vào hàm xử lý thread
+			- biến thứ 4 là con trỏ trỏ vào arg của hàm thread
 
-5. fork() da luong duoc, nhung da luong toi uu bo nho hon, thread dong bo, fork tao ra 1 process moi -> su dung bien dung chung rat kho
+		+ Main thread là thread đầu tiên được thực thi
 
-6. Nguyen tac may tinh khong tinh toan tren Ram ma load ra thanh ghi tinh toan roi moi load lai vao ram
+		+ Kể cả 1 core thì lập trình đa luồng vẫn tối ưu hơn vì có thể có trường hợp như delay() chờ user nhập từ bàn phím... -> đa luồng xử lý công việc tốt hơn
 
-7. Nguyen tac thi cang nhieu lock cang cham, nhung doi lai thi an toan hon
+		+ fork() đa luồng được, nhưng thread tối ưu bộ nhớ hơn, thread đồng bộ, fork() tạo ra 1 process mới -> sử dụng biến dùng chung rất khó đối với fork()
 
-8. Semaphore la lock nhieu khoa, co n khoa thi tai nguyen thu n+1 muon truy cap vao phai cho 1 trong n khoa kia tra lock
+		+ Nguyên tắc là máy tính không tính toán trên RAM mà load ra thanh ghi tính toán rồi mới load lại vào  RAM
 
-9. Mot lock dua vao nen suy nghi co can dua vao hay khong, vi dung lock lam cham hon va co the gay deadlock
+		+ Nguyên tắc là càng nhiều lock càng chậm, nhưng đổi lại thì an toàn hơn
+
+		+ Semaphore là lock nhiều khóa, có n khóa thì tài nguyên thứ n+1 muốn truy cập vào phải chờ 1 trong n khóa kia trả lại lock
+
+		+ Một lock muốn đưa vào nên suy nghĩ có cần đưa vào hay không, vì dùng lock làm lậm chuơng trình hơn và có thể gây ra deadlock
+
+
+---------------------------------------------------------------
+Lý thuyết xem video:
+---------------------------------------------------------------
+
+1. Ý tưởng:
+	+ Nếu 2 công việc A và B là 2 công việc có thể chạy độc lập với nhau được, không phải chờ đợi nhau -> nên lập trình đa luồng
+
+	+ Nếu trình 1 luồng thì phải chờ công việc A chạy xong mới chạy công việc B được -> xử lý như này là không cần thiết
+
+	+ Ví dụ công việc A chờ đợi user nhập gì đó từ bàn phím, công việc B làm công việc khác -> nếu chỉ chờ user nhập mà không làm gì thì lãng phí CPU vì trong quá trình chờ user nhập nó không làm gì cả	-> đa luồng: 1 luồng chờ user nhập dữ liệu, 1 luồng làm công việc khác
+
+
+2. Ưu điểm multi_thread
+	+ Tối ưu được các core của CPU có nhiều core
+
+	+ Tránh được các trạng thái block của chương trình
+
+	+ Nếu mà chỉ có 1 core thì có cần lập trình đa luồng? Câu trả lời là có để có thể làm được nhiều việc cùng 1 lúc, kể cả hệ thống có 1 core
+
+	+ Các thread cùng truy cập vào 1 tài nguyên nào đấy -> cần lưu ý đồng bộ để tránh xung đột tài nguyên đấy
+		- ví dụ khai báo biến a và 2 thread 1, 2
+		- thread 1 set a = 5, thread 2 set a = 8
+			-> vậy a bằng bao nhiêu
+			-> chú ý tránh xung đột tài nguyên
+
+
+3. Bản chất của thread
+	+ CPU (core) có 1 list công việc phải xử lý, mỗi 1 list công việc gọi là 1 task_struct. Core định kỳ trong 1ms 1 lần sẽ lựa chọn: một là tiếp tục làm công việc đang chạy trong core này, hai là bỏ công việc đấy ra và nó sẽ làm công việc trong queue của core
+
+	+ Để dễ hình dung, coi queue có nhiều ô, 1 ô ở trong queue bản chất chứa 1 con trỏ để trỏ đến 1 câu lệnh đang dang dở. Ví dụ:
+		A () {
+			a = b + c;
+			d = e + f;
+		}
+
+		- Nhiều khi A() chỉ chạy đến câu lệnh a = b+c, d = e+f nó chưa chạy xong, thì con CPU nó dừng lại, bỏ câu lệnh d = e+f ra ngoài, tạo ra một cái queue cho công việc đang dang dở
+			-> CPU push công việc đang dang dở trong CPU vào queue
+
+		- Bản chất queue chứa 1 con trỏ trỏ đến câu lệnh đang chạy dở là d = e+f
+
+		- Sau khi core chọn lựa được công việc tiếp theo cho nó: nó sẽ chọn được ô trong queue, và CPU biết sẽ phải làm công việc gì tiếp theo bằng cách chạy tiếp câu lệnh đang dang dở
+
+		- Tượng tượng mỗi ô trong queue như là 1 chương trình, trong ô này chứa câu lệnh đang chạy dở của chương trình đấy. Mỗi một khi CPU lập lịch, nó sẽ lựa chọn ô trong queue, đối với từng ô một nó sẽ chạy tiếp câu lệnh đang chạy dở
+
+		- Tại 1 thời điểm có rất nhiều ô được push vào queue, CPU sẽ định kỳ lựa chọn các ô, chính là lựa chọn chương trình nào nó sẽ chạy
+
+		- Mỗi 1 ô vuông trong queue đấy giống như 1 luồng. Khi CPU chạy 1 ô vuông, nó sẽ chạy tuần tự từng câu lệnh một trong ô vuông đấy -> việc chạy tuần tự từng câu lệnh một đấy giống như 1 luồng
+
+		+ Luồng là 1 đối tượng công việc, một khi CPU đi vào trong đối tượng đấy, nó sẽ phải thực hiện những câu lệnh của công việc đấy
+			- Ví dụ: chương trình C luồng hàm main: khi đã đi vào hàm main nó phải chạy tuần tự các câu lệnh trong hàm main
+
+		+ Trong CPU có danh sách các công việc chính là các luồng, CPU sẽ lựa chọn tại thời điểm này sẽ xử lý các luồng nào, tại thời điểm khác sẽ xử lý các luồng nào
+
+
+4. Lập trình multi_thread
+	+ include <pthread.h>
+
+	+ tạo mới thread: pthread_create()
+		- tham số đầu tiên: 
+			+ ví dụ khi lập trình khai báo pthread_t thread1
+
+			+ tham số đầu tiên chính là địa chỉ của thread1
+
+			+ giống nhứ pid của process, thread cũng cần 1 đối tượng đại diện cho chính nó. Khi truyền địa chỉ của thread1 vào, hàm pthread_create() sau khi chạy xong nó sẽ trả lại đối tượng đấy vào con trỏ của thread1 cho các bạn
+
+			+ tham số truyền vào đầu tiên chính là đối tượng đại diện cho thread mới được tạo ra
+
+		- tham số thứ 2: thuộc tính của thread mới được tạo ra
+			+ bản chất pthread_attr_t giống như các bit, khoảng 32 hay 40 bit gì đó, mỗi 1 bit bật lên thì nó có 1 tác dụng nhất định, ví dụ có những option truyền vào cho pthread_attr_t sẽ tăng độ ưu tiên của thread của mình lên
+
+		- tham số thứ 3: con trỏ hàm để bắt đầu thread, tức là khi thread được chạy nó sẽ gọi hàm này đầu tiên
+			+ giống như chương trình C khi được chạy nó sẽ chạy hàm main đầu tiên 
+
+			+ thread khi được chạy nó sẽ chạy hàm này đầu tiên, nó đóng vai trò là hàm main của thread
+
+		- tham số thứ 4: con trỏ trỏ đến 1 vùng dữ liệu nào đấy mà mình muốn truyền cho thread
+
+		- tạo thành công: return 0, nếu lỗi sẽ trả về mã lỗi
+
+	+ Hàm kết thúc thread:
+		- giống như tiến trình có 2 loại kết thúc: chủ động và bị động
+
+		- thread kết thúc chủ động:
+			+ gọi return trong hàm main của thread
+
+			+ gọi câu lệnh pthead_exit() tại bất cứ hàm nào mà hàm main của thread gọi ra
+
+		- thread kết thúc bị động:
+			+ thread bị cancel: pthread_cancel(), truyền vào thread_t (ví dụ thread1) thì nó sẽ cancel thread đấy luôn
+				-> dùng ở đâu: ví dụ có 2 thread A và B, và muốn thread B cancel thread A -> trong thread B gọi hàm pthread_cancel(), truyền vào pthread_t của thread A là xong
+
+	+ Sau khi thread kết thúc bằng pthread_exit(), return hoặc pthread_cancel(), thực ra tài nguyên mà thread chiếm giữ vẫn chưa được free hoàn toàn (giống zombie process), để kết thúc thực sự thì gọi ra hàm pthread_join():
+		- khi gọi ra hàm này nó sẽ block chương trình ở điểm lúc gọi, đợi đến khi thread gọi câu lệnh kết thúc thì hàm pthread_join() mới chạy tiếp được: giống hàm wait trong process
+
+		- khi gọi hàm join mà thread đã chạy xong rồi thì thread trả về luôn chứ không block chương trình nữa, nó trả về mã lỗi EINVAL. Hàm này chỉ gây block khi thread được truyền vào đang running
+
+
+5. Khác nhau giữa thread và process
+	+ Điểm khác nhau lớn nhất là tính chịu trách nhiệm khi có lỗi xảy ra
+
+	+ Đôi với hệ điều hành, đơn vị nhỏ nhất chịu trách nhiệm cho 1 dòng code chính là process
+
+	+ Ví dụ có 1 tiến trình tạo ra 2 thread A và B trong tiến trình đấy. Khi thread A truy cập vào 1 vùng nhớ không hợp lệ, ví dụ truy cập vào con trỏ NULL chẳng hạn, thì cả thread A và B sẽ cùng bị terminate
+		- tại vì cả thread A và B cùng thuộc 1 process ban đầu, khi A hoặc B gặp lỗi thì process phải chịu trách nhiệm cho hành động đấy và process sẽ bị terminate
+
+		- nếu process bị terminate nghĩa là tất cả thread mà process đấy tạo ra cũng bị terminate theo
+
+		- thread giống như 1 tập con của process, khi process terminate thì tất cả thằng con cũng terminate theo
+
+	+ Về mặt lập lịch, việc tạo ra tiến trình con hay tạo thread mới thì chúng có độ ưu tiên như nhau
+
+	+ Vậy thi nào thì tạo process mới, khi nào thì multi_thread? Dựa vào tiêu chí như sau: nếu đoạn code bạn gọi ra dễ lỗi, ví dụ đoạn code của bạn gọi lệnh system(), thì nên tạo ra process mới 
+		- Tạo ra process mới mà nó gặp lỗi thì chỉ có process  con bị terminate, còn process cha vẫn không bị làm sao cả
+
+		- Nếu đoạn code không chạy chương trình dễ bị lỗi thì vẫn nên dùng thread, vì so sánh giữa việc tạo process mới và tạo thread mới thì tạo thread mới vẫn tiết kiệm bộ nhớ hơn, vì các thread chia sẻ không gian bộ nhớ chung của process, còn tạo process mới nó sẽ duplicate bộ nhớ đấy ra -> sẽ tốn bộ nhớ hơn
+
+
+6. Đồng bộ giữa các thread: mutex (lock bằng mutex)
+	+ Khi lập trình multi_thread luôn lưu ý 1 điều là đồng bộ giữa các thread với nhau
+
+	+ Idea mutex: khi có 2 thread 1 và 2 cùng truy cập vào tài nguyên là shared resource. mutex gọi là cơ chế lock 1 chìa. Khi thread 1 hoặc thread 2 muốn truy cập vào shared resource, nó tiến hành lấy lock (khóa) đấy trước, nếu thread nào giữ được chìa đấy thì được quyền truy cập vào tài nguyên. thread sau khi dùng xong tài nguyên, không cần dùng nữa thì trả lại lock (unlock), khi đó thread còn lại được quyền dùng shared resource
+		-> tại 1 thời điểm, chỉ có thread nào có được lock mới được quyền dùng tài nguyên
+
+		-> vì mutex là khóa 1 chìa, nên tại 1 thời điểm chỉ có duy nhất 1 thread được quyền giữ lock và được quyền dùng tài nguyên
+
+		-> nếu có 10 thread cùng dùng 1 tài nguyên, tại 1 thời điểm chỉ có 1 thread được dùng, 9 thread còn lại phải đợi hết
+
+	+ code
+		- khởi tạo mutex: pthread_mutex_init()
+			+ tham số thứ nhất:
+				- khai báo pthread_mutex_t lock_resource
+				- tham số thứ nhất chính là địa chỉ của lock_resource (tương tự với thread)
+
+			+ tham số thứ 2: thuộc tính của mutex
+				- thông thường để default: NULL
+
+		- 1 thread muốn lock mutex: pthread_mutex_lock():
+			+ truyền vào địa chỉ của lock_resource
+
+			+ hàm này tiến hành block chương trình, nếu mutex đang available, nghĩa là đang không có thread nào giữ nó thì hàm này trả về luôn, lock_resource chuyển sang trạng thái là lock. Còn nếu không, tại thời điểm gọi ra pthread_mutex_lock() mà lock_resource đang bị 1 thằng khác giữ rồi (not available) thì hàm này block chương trình cho đến khi lock_resource unlock thì thôi
+
+			+ trạng thái block trên tầng user thực ra chính là sleep chương trình cho đến khi biến lock_resource chuyển sang trạng thái unlock
+
+		- sau khi có được lock rồi, thread được quyền dùng tài nguyên, sau khi dùng xong sẽ phải unlock mutex: pthread_mutex_unlock(): trả lại lock vào chỗ cũ
+
+		- pthead_mutex_trylock(): nếu dùng pthread_mutex_lock mà mutex đã bị dùng rồi thì chương trình bị block luôn, mà block bao lâu thì bạn không biết được tại vì nó phụ thuộc vào thread khác, thread khác unlock thì chương trình mới hết block. Hàm trylock sẽ check trạng thái của mutex đấy, nếu mutex available thì lock luôn, còn nếu không thì return luôn, chương trình sẽ không bị block
+
+
+7. Semaphore
+	+ Chẳng hạn bây giờ có 1 cái ổ cứng, trên ổ cứng đấy có 3 phân vùng C, D, E. Ổ cừng chỉ là 1 thiết bị nên thông thường chỉ có 1 driver điều khiển, nghĩa là mặc dù có 3 partition nhưng thực tế chỉ có 1 driver
+		- Nếu mỗi khi có 1 lời đọc/ghi xuống ổ cứng, driver có 1 mutex lock, chẳng hạn lời đọc/ghi đang ghi vào partition C thì lời đọc/ghi vào partition D sẽ phải đợi -> không hợp lý lắm
+
+		- Để tránh mất thời gian thì đang đọc/ghi vào C thì chỉ lock ở C thôi, D và E vẫn phải để đấy để thằng khác còn ghi được chứ không nên lock cả 3
+
+		- Có 2 cách khắc phuc: một là tạo ra 3 lock cho 3 phân vùng C, D, E; hai là dùng 1 cơ chế nào đấy lock nhiều chìa hơn
+
+	+ Ví dụ khác, chẳng hạn máy tính có 2 port Internet, thì chúng ta mong muốn có 1 cơ chế nào đấy cho phép ở một thời điểm chỉ có tối đa 2 tiến trình được quyền dùng Internet. Nếu có thêm process thứ 3 muốn truy cập Internet thì process thứ 3 sẽ phải đợi
+
+		-> yêu cầu 1 loại khóa nào đấy sinh ra số lượng chìa hữu hạn. Chẳng hạn khởi tạo với số lượng chìa bằng 10 thì tại 1 thời điểm có tối đa 10 thread được quyền dùng khóa đấy, nếu có thread thứ 11 muốn dùng chìa đấy thì sẽ phải đợi. 10 thread kia sau khi dùng xong sẽ trả thread về chỗ cũ để thread khác còn dùng được
+
+		-> cơ chế khóa nhiều chìa này chính là ý tưởng của phương pháp khóa Semaphore
+
+	+ Semaphore cho phép khởi tạo khóa semaphore với số lượng chìa tự define
+
+	+ code:
+		- sem_t sem_name;
+
+		- sem_init():
+			+ tham số thứ nhất: truyền vào địa chỉ của semaphore
+
+			+ tham số thứ 2:
+
+			+ tham số thứ 3: số lượng chìa của semaphore đấy
+
+		- bất cứ thread nào muốn dùng đến tài nguyê được bảo về bởi semaphore sẽ phải lấy chìa khóa bằng cách gọi hàm sem_wait(), nếu số lượng chìa khóa chưa bị lấy hết thì hàm này return luôn, trả về cho thread đấy chìa khóa, còn nếu lúc gọi ra thì chìa khóa bị dùng hết rồi thì hàm này sẽ block chương trình, bao giờ có thread khác unlock thì chìa khóa đấy sẽ được trả về cho hàm này
+
+		- khi có được chìa khóa, dùng xong thì phải trả lại chìa khóa về chỗ cũ bằng cách gọi hàm sem_post()
+
+		- cũng như mutex, semaphore nếu không dùng nữa thì phải free nó đi bằng cách gọi hàm sem_destroy()
+
+	+ Có 1 vấn đề ở đây là giả sử tạo semaphore 3 chìa cho 3 phân vùng C, D, E nhưng nếu cả 2 thread đều muốn đọc ghi vào 1 phân vùng ví dụ phân vùng C thì vẫn không được, vẫn gây bất đồng bộ dữ liệu. Lúc đấy thì có thể phải có thêm mutex cho từng partition
+
+	+ Semaphore khác mutex ở chỗ: tại 1 thời điểm mutex chỉ cho 1 thằng truy cập tài nguyên, còn semaphore cho phép nhiều thằng cùng truy cập tài nguyên đấy
+
+	+ ví dụ minh họa nên dùng semaphore: port Ethernet có tốc độ đầu ra là 1 GB/s, bạn tính toán trung bình mỗi app của bạn dùng tối đa 100MB/s -> nên dùng semaphore cho port Internet: khởi tạo 1 semaphore với số lượng key là 10 thì mình tính toán được tối đa ở 1 thời điểm nếu các app lock hết semaphore thì vẫn không bị tràn đường truyền của Ethernet. Còn nếu dùng mutex thì chỉ 1 thằng dùng, chỉ được max 100MB/s -> lãng phí port Ethernet
+
+
+8. Deadlock
+	+ Deadlock chỉ xảy ra khi bạn có 2 khóa trở lên, khi đó sẽ có khả năng tạo ra deadlock, còn nếu chỉ có 1 khóa thì không bao giờ tạo ra deadlock, hoặc nhiều khóa nhưng chỉ có 1 thread cũng không xảy ra deadlock được
+
+	+ Deadlock chỉ xảy ra khi có 2 thread sở hữu 2 khóa khác nhau. ví dụ:
+		thread_A() {
+			mutex_lock(lock1);
+			mutex_lock(lock2);
+			...
+			mutex_unlock(lock1);
+			mutex_unlock(lock2);
+		}
+
+		thread_B() {
+			mutex_lock(lock2);
+			mutex_lock(lock1);
+			...
+			mutex_unlock(lock2);
+			mutex_unlock(lock1);
+		}
+
+		-> 2 thread A và B dùng cùng truy cập vào 2 tài nguyên được bảo vệ bởi lock1 và lock2, thứ tự lock trái ngược nhau. Giả sử A và B chạy trên 2 core, core 1 chạy thread A, core 2 chạy thread B. Tại thời điểm này core 1 giữ lock1, core 2 giữ lock2. Sau đó các thread chạy tiếp, thì thread A muốn lấy lock2, nhưng lock2 đang bị core 2 giữ, cùng thời điểm này thread B muốn lấy lock1 nhưng lock1 đang bị core 1 giữ. Nghĩa là tại thời điểm này mỗi core sẽ đợi lock của thằng còn lại, thằng còn lại sẽ không nhả ra vì chưa kết thúc thread -> 2 thread đi vào trạng thái đợi nhau mãi mãi -> được gọi là deadlock
+
+	+ khắc phục deadlock:
+		- Nên lock theo 1 chiều: các thread cùng lock1 rồi mới đến lock2, chứ không nên đảo chiều thứ tự lock
+
+		- Giảm số lượng lock
+
+
+9. Wrapper function
+	+ Bây giờ, dev A lập trình dùng mutex để đảm bảo tăng biến count đúng, dev B lập trình tăng biến count đấy lên nhưng không gọi hàm mutex -> chương trình vẫn chạy bình thường (nghĩa là vẫn tăng biến count bình thường, nhưng chạy kết quả sẽ không đúng) -> việc dùng mutex hay không chỉ mang tính quy ước, do dev tự chọn -> mutex hay semaphore là các lock quy ước
+
+	+ Để khắc phục nhược điểm của các lock quy ước thì sinh ra cơ chế gọi là wrapper function
+
+	+ wrapper function: cơ chế bạn ẩn tài nguyên đi, chỉ cung cấp các hàm để truy cập vào tài nguyên đấy, code implemement để truy cập vào tài nguyên đấy bị che giấu đi
+
+	+ tại sao sinh ra cơ chế này: ví dụ code kernel của hệ điều hành, có những biến nếu public ra thì bạn có thể đọc được hoặc sửa được, dẫn đến phải giấu đi, chỉ cung cấp những hàm có thể đọc được giá trị biến đấy còn ghi thì kernel không cho bạn đi -> kernel bảo vệ được biến đấy
