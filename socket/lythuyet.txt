@@ -1,17 +1,206 @@
-1. co che NAT
+---------------------------------------------------------------
+Lý thuyết học trên lớp
+---------------------------------------------------------------
+   + Cơ chế NAT
 
-2. Port: phan biet ung dung nao cua bang tin day, vi du Excel, Word...
+   + Port: để phân biệt được bảng tin truyền đi / nhận được là của ứng dụng nào, ví dụ Excel, Word...
 
-3. Server: chu dong lang nghe
-   Client: chu dong ket noi
-   Server IP, Port -> server accept -> thiet lap duong truyen
+   + Server: chủ động lắng nghe
+      Client: chủ động kết nối
+      Server IP, port -> server accept -> thiết lập đường truyền
+   + ifconfig -> network interface: đại diện cho device file của card mạng. Data gửi ra ngoài -> thay vì ghi vào device file thì sẽ ghi vào network interface
 
-4. ifconfig -> network interface: dai dien cho device file cua card mang
+   + lo (loopback): card mạng ảo: khi có client gửi cho lo thì lo đẩy cho server
 
-data gui ra ngoai -> thay vi ghi vao device file thi se ghi vao network interface
+   + nên sử dụng port động, không nên fix cứng port number
 
-lo: card mang ao: khi co client gui cho lo thi lo day cho server
+   + daemon process
 
-nen su dung port dong, khong nen fix cung port number
 
-5. daemon process
+
+
+---------------------------------------------------------------
+Lý thuyết xem video
+---------------------------------------------------------------
+
+1. Đặt vấn đề
+   + Các thiết bị nhúng đa số đều sử dụng đến network: IoT, thiết bị mạng...
+
+   + Trong lập trình nhúng, cách duy nhất để sử dụng được network bên ngoài là phải thông qua socket. socket là cửa ngõ trong hệ thống để đi ra được bên ngoài. Mọi đường đi ra bên ngoài đều phải thông qua socket
+
+   + Mục tiêu: Lập trình để gửi dữ liệu ra ngoài hệ thống, ra khỏi máy của các bạn
+
+   + Nội dung bài học:
+      - Lý thuyết cơ bản về mạng máy tính
+      - socket là gì
+      - lập trình với socket
+
+
+2. Khái niệm cơ bản
+   + Địa chỉ IP: dãy số 32 bit (4 byte) -> vì là 4 byte nên gọi là IPv4: dùng 4 byte để đánh địa chỉ -> tối đa 2^32 địa chỉ
+      - Dùng để định danh các máy tính trong mạng internet
+
+      - Mỗi 1 bản tin đi trong mạng internet thì đầu bảng tin phải gắn địa chỉ IP (giống như gửi thư cho người khác thì ở ngoài phong bì phải ghi địa chỉ của người nhận), để các máy server trung gian biết được bản tin này phải gửi đi đâu
+
+   + Global IP và local IP:
+      - bây giờ số lượng thiết bị cần dùng đến mạng > 2^32 rồi  -> nếu chỉ dùng IPv4 để cấp phát thì không đủ -> sinh ra 1 cơ chế là local IP
+
+      - local IP: ví dụ ở nhà mình có wifi và 4 thiết bị khác sử dụng network qua wifi: ví dụ 1 laptop, 3 smartphone.
+         + Thực ra khi bản tin đi ra khỏi mạng của các bạn và đi vào internet thì cả 4 thiết bị đấy đều có chung 1 địa chỉ IP
+
+         + Địa chỉ IP đấy chính là địa chỉ IP của wifi
+
+         + Đối với mạng LAN cục bộ trong nhà của bạn, router đấy lại đánh chỉ chỉ IP riêng cho từng thiết bị một trong mạng cục bộ đấy -> nó được gọi là local IP
+
+         + local IP của mạng cục bộ này có thể trùng với local IP của mạng cục bộ khác, hoặc có thể trùng với IP ở bên ngoài, cũng không sao cả bởi vì local IP chỉ được dùng trong mạng cục bộ đấy thôi, miễn là trong mạng cục bộ đấy, các local IP với nhau không bị trùng là được
+
+         + Khi đã ra bên ngoài (ngoài router) thì phải dùng đến global IP
+
+   + IPv6: dùng 6byte để đánh địa chỉ, nhưng vẫn chưa áp dụng hết, đa số IP bây giờ vẫn là v4
+
+   + Port:
+      - bây giờ bạn có 1 cái máy tính, tất cả dữ liệu từ máy tính đấy gửi ra  ngoài mạng thì đều có chung 1 địa chỉ IP và địa chỉ IP đấy định danh cho máy tính đấy
+
+      - trên máy tính chạy rất nhiều ứng dụng, ví dụ như facebook, youtube...mỗi 1 ứng dụng đấy đều có nhu cầu gửi/nhận bản tin vào mạng internet
+
+      - vậy thì khi có bản tin đến máy tính đấy, làm thế nào hệ điều hành phân biệt được bản tin đấy thuộc về ứng dụng nào? -> khái niệm port
+
+      - mỗi một ứng dụng khi connect ra mạng internet thì sẽ xin máy tính mở 1 port. Port là 1 số định danh, 1 số nguyên không âm. Trong bản tin gửi đến máy tính, ngoài địa chỉ IP còn có thêm giá trị của port nữa (port number)
+
+      - máy tính dựa vào số port đấy để biết bản tin này thuộc về ứng dụng nào, trả về cho ứng dụng đấy
+
+   + Mô hình client - server:
+      - khi 2 thiết bị trong máy tính muốn giao tiếp được với nhau thì phải thiết lập 1 kênh truyền nào đấy
+
+      - có nhiều cơ chế để 2 thiết bị thiết lập kênh truyền với nhau, trong đó có 1 mô hình phổ biến là mô hình client - server
+
+      - mô hình client - server:
+         + thiết bị client phải chủ động connect đến thiết bị server. Để conect được vào server, client phải biết địa chỉ IP của server
+
+         + client gửi bản tin yêu cầu kết nối đến server. Bản tin gửi đi được là vì client có địa chỉ IP của server
+
+         + server: server không quan tâm địa chỉ IP của client, mà chỉ là 1 người chủ động lắng nghe. Khi có bản tin yêu cầu kết nối của client gửi đến thì server sẽ quyết định đồng ý hay không đồng ý. Nếu server thì giữa 2 thiết bị sẽ thiết lập với nhau 1 cái kênh truyền, còn nếu server không đồng ý kênh truyền sẽ không được thiết lập
+
+         + sau khi có kênh truyền được thiết lập rồi, bản tin sẽ được gửi vào trong kênh truyền đấy
+
+
+3. Socket
+   + Mục tiêu bài:
+      - lập trình được socket
+
+      - sau này khi viết driver về Ethernet hoặc Wifi, các bạn cần phải viết app dùng được network để check kiểm tra lại tính năng của driver các bạn vừa viết
+
+      - giúp hiểu đươc cơ chế của các ứng dụng tầng trên dùng network như nào để viết được driver đúng
+
+      - mục tiêu không phải là dạy chuyên sâu để lập trình được network
+
+   + Bản chất socket:
+      - bản chất socket là 1 file
+
+      - khác với file thông thường, socket sẽ chỉ định cho hệ điều hành biết được là dữ liệu ghi vào socket đấy có thể sẽ được đi ra ngoài hệ thống. Thay vì các loại file khác như device file, proc file...hay là các file thông thường thì data của nó sau khi ghi vào file nó sẽ đi xuống phần nào đó của hệ thống. socket khác, nó có thể đi ra khỏi hệ thống
+
+      - socket là một file được gọi là point-to-point (điểm-điểm). Nghĩa là data khi đi vào socket là 1 đầu của đường ống thì nó sẽ đi đến 1 socket khác ở đầu ra của đường ống, thì được gọi là point-to-point
+
+
+4. Lập trình socket
+   + Về bản chất, vì socket cũng là 1 file nên cách lập trình với socket giống với lập trình file
+
+   + Đầu tiên tạo ra socket (tạo ra file) bằng hàm: socket()
+      - nếu thành công, giá trị trả về file fd đại diện cho socket đấy
+
+      - tham số đầu tiên: domain: chỉ định socket đấy là AF_INET, TCP/IP... hay là một cái gì đấy -> chỉ định một bản tin đấy ghi ra ngoài hệ thống hay chỉ trung chuyển trong hệ thống
+         + ví dụ domain để là AF_UNIX: data không đi ra ngoài mà chỉ đi bên trong hệ thống. vì sao lại sinh ra cái này, vì nhiều khi các ứng dụngmuốn tạo ra socket để giao tiếp với nhau. Nếu các ứng dụng trong 1 máy tạo socket để giao tiếp với nhau thì rõ ràng data của nó không cần phải đi ra bên ngoài mà chỉ đi lòng vòng trong hệ điều hành
+
+         + AF_INET: chỉ định socket dùng IPv4
+
+         + AF_CAN: dùng cho bản tin của giao thức CAN (là giao thức phổ biến trong ô tô)
+
+         + ...
+
+      - tham số thứ 2: type: định nghĩa cách truyền dữ liệu, chỉ định cách giao tiếp (data nó truyền như nào)
+         + ví dụ chỉ định là SOCK_STREAM: data đi theo kiểu 1 dòng chảy liên tục, không ngắt quãng
+            - chẳng hạn xem bóng đá: data ở dạng streaming
+
+         + SOCK_DGRAM: data truyền từng đoạn một, từng gói một
+            - chat facebook: mỗi một lần gõ 1 đoạn text nó sẽ đóng gói thành 1 bản tin gửi đi và truyền từng đoạn một, chứ không phải truyền liên tục
+         + ....
+
+      - tham số thứ 3: protocol: định nghĩa cách bắt tay
+
+   + Vấn đề thứ 2 cần lưu ý:
+      - nếu các bạn muốn gửi bản tin ra khỏi mạng, các bạn phải đánh đia chỉ cho bản tin đấy. Khi bản tin đi trong mạng có 1 vấn đề nảy rất đặc thù nảy sinh là endianess
+
+      - little endian và big endian: nếu chỉ làm việc trên cùng 1 máy tính thì không phải care đến vấn đề này
+
+      - nhưng nếu gửi bản tin ra khỏi mạng thì bạn lại cần quan tâm. Làm thế nào 1 hệ thống little endian lại hiểu được format data của bản tin được gửi từ hệ thống big endian
+
+      - chuẩn chung của network là big-endian -> cho dù hệ thống là big-endian hay little-endian thì cũng phải format lại data theo chuẩn chung của network
+
+      - để đính kèm được địa chỉ IP vào trong bản tin thì bạn cần phải convert được giá trị địa chỉ IP của bạn vào đúng chuẩn data của network
+
+      - hàm convert:
+         + unit32_t htonl(uint32_t hostint32): truyền vào 1 số bất kỳ, hàm này convert số đấy sang chuẩn của network
+
+         + uint16_t ntohs(uint16_t netint16): truyền vào 1 số theo chuẩn của network, hàm này trả về số đấy theo chuẩn của máy bạn đang chạy
+
+         + 2 hàm convert trên đều truyền vào 1 số integer, nhưng để ý thì địa chỉ IP của mình là 1 chuỗi string, ví dụ: "127.0.0.1" -> hàm convert 1 chuỗi IP string ra 1 số IP theo chuẩn network: inet_addr()
+
+   + Đính kèm IP vào bản tin: struct sockaddr_in
+      - loại network
+      - convert địa chỉ IP từ string sang địa chỉ IP của network
+      - gán số port
+
+   -> Xong các bước trên: xong phần tạo ra socket và khởi tạo địa chỉ, nhưng 2 cái đấy đang riêng rẽ
+
+   -> Bước tiếp theo: gán địa chỉ IP  đã khởi tạo cho socket đấy
+
+   -> tại vì sao phải làm bước này? Tại vì khi đã gán địa chỉ IP cho socket thì khi mà ghi data xuống socket đấy thì mặc định data đấy sẽ được đính kèm địa chỉ mà bạn gán vào
+
+   -> tức là gán lần đầu tiên là xong, lần sau ghi không cần phải gán lại nữa, mặc định nó sẽ lấy địa chỉ bạn gán lúc trước
+
+   -> để gán địa chỉ cho socket: dùng hàm bind()
+      - tham số thứ nhất: sockfd đã khởi tạo
+      - tham số thứ 2: struct sockaddr
+      - tham số thứ 3: chiều dài của struct trên
+
+      -> hàm khi chạy xong thì sockfd sẽ được đính địa chỉ bạn đã khởi tạo vào
+
+   + Thiết lập kết nối: cách kết nối giữa client và server khác nhau -> khi lập trình socket bạn phải định hình máy tính nào làm server, máy tính nào làm client
+      - client có cách lập trình socket khác với cả server. Có sự khác nhau là vì cơ chế bắt tay đã khác nhau rồi
+
+      - client khi cần kết nối: gọi hàm connect() để chủ động kết nối: hàm này gửi 1 bản tin đặc biệt đến server để xin server kết nối
+
+      - server chỉ cần gọi hàm listen(int sockfd, int backlog):
+         + hàm này sẽ tạo ra 1 cái hàng đợi, hàng đợi có bao nhiêu ô do số backlog quy định: ví dụ set là 10 thì nó có 10 ô
+
+         + mỗi khi có 1 request đặc biệt gửi bởi lệnh connect(), bản tin của request đấy sẽ được chứa trong hàng đợi
+
+      - server gọi ra hàm accept để quyết định có đồng ý kết nối hay không
+         + nếu accept thì hàm này sẽ trả về 1 socket mới
+
+         + socket mới này được dùng để thiết lập point-to-point đối với riêng client kia thôi
+
+         + socket ban đầu server khởi tạo dùng để lắng nghe bản tin đặc biệt yêu cầu kết nôi
+
+         + khi server đã đồng ý kết nối nó sẽ tạo ra 1 socket mới chuyên dùng để point-to-point vào client kia
+
+   + Sau khi kết nối được rồi, server có thể gửi/nhận dữ liệu vào client thông qua hàm read(), write() như bình thường, các hàm này chính là các hàm thao tác với file
+
+   + server nếu không muốn connect với cả client đấy nữa thì gọi ra hàm close()
+
+   -> server có 2 socket: 
+      - 1 cái là connection socket, chuyên dùng để point-to-point với từng client, ví dụ có 10 client kết nối đến thì server sẽ tạo ra 10 connection socket để point-to-point cho 10 thằng riêng biệt
+
+      - riêng listen socket chỉ cần 1 thôi, dùng để chứa bản tin yêu cầu kết nối của client gửi đến
+
+   + Phía client sẽ gửi/nhận bản tin trực tiếp vào socket mà nó dùng để kết nối đến server lúc ban đầu, phía server để gửi/nhận bản tin với client thì phải tạo socket mới, client thì không cần
+
+   + client muốn hủy kết nối có thể gọi ra hàm close()
+
+5. Loopback interface của Linux:
+   + Các máy tính chạy Linux đều có 1 card mạng là loopback, dùng lệnh ifconfig sẽ thấy card mạng tên là lo có địa chỉ IP là 127.0.0.1
+
+   + loopback: tất cả bản tin gửi đến loopback thì nó sẽ gửi ngược lại máy tính chứ không gửi ra ngoài nữa
+
+6. Hàm ping()
+   + ping tên website, trả về địa chỉ IP của website đấy
