@@ -1,0 +1,198 @@
+1. Đặt vấn đề
+	+ Ứng dụng của shared memory làm về driver rất là nhiều
+
+	+ Ví dụ: các đơn vị phát triển về mạng Internet, bây giờ ra các chuẩn internet mới như 4G, 5G, Ethernet 1GB...Với những chuẩn thiết bị mà nó cần giao tiếp với các ứng dụng ở tầng trên với tốc độ nhanh thì sinh ra 1 cơ chế giao tiếp khác đó là cơ chế giao tiếp thông qua bộ nhớ: shared memory
+
+	+ Tại sao lại sinh ra cơ chế này? Nếu giao tiếp với phần cứng thông qua cơ chế truyền thống là thông qua device file thì có 1 nhược điểm: mỗi khi đọc/ghi vào device file sẽ phải thông qua system call. Mà thông qua system call thì sẽ gây sleep tiến trình gọi system call đấy -> Cho dù ghi với tốc độ bao nhiêu đi chăng nữa thì mỗi lần ghi đều bị sleep, giống như đi 1 cái xe cứ được vài mét lại bị giật 1 cái -> không thể nào mượt mà và không thể nào đem lại tốc độ cao được
+		-> thiết bị cần giao tiếp với app với tốc độ cao thì người ta giao tiếp thông qua shared-memory
+
+	+ Ví dụ: audio có shared-memory giữa audio và app, graphic có shared-memory giữa graphic và app, Ethernet chuẩn 1 GB cũng có shared-memory...
+
+	+ Mục tiêu: học về shared-memory để chia sẻ bộ nhớ giữa driver và app, giữa các app với nhau
+
+	+ Nội dung:
+		- Cách hệ điều hành quản lý bộ nhớ như nào
+
+		- Làm thế nào để hệ điều hành có thể chia sẻ bộ nhớ được giữa các ứng dụng với nhau
+
+		- Các kỹ thuật lập trình để chia sẻ bộ nhớ
+
+
+2. Bộ nhớ: Đơn vị của bộ nhớ: có 2 loại
+	+ đơn vị về mặt truy cập: đơn vị theo địa chỉ và theo từng word một, không phải từng byte một: 1 word = 8 byte (với kiến trúc 64bit), = 4 byte (với kiến trúc 32bit)
+
+	+ đơn vị về mặt quản lý:
+		- biến const: giá trị của nó là hằng số và không thể thay đổi được
+
+			-> về mặt bộ nhớ, làm thế nào vùng nhớ lưu biến const đấy có thể khiến cho giá trị không thay đổi được
+
+		- trong file có khái niệm read-only file -> bộ nhớ sẽ có những vùng nhớ gọi là read-only
+
+			-> vậy thì với 1 byte hay 1 word trong vùng nhớ đấy, làm thế nào hệ điều hành nó biết được là byte/word đấy phải là read-only
+
+			-> từ đó sinh ra đơn vị quản lý bộ nhớ theo từng page một
+
+		- Mỗi 1 page bộ nhớ đấy thông thường có kích thước 4kB, tất cả byte trong page đấy có chung 1 thuộc tính, ví dụ nếu là read-only thì tất cả byte trong page đấy đều cùng thuôc tính là read-only
+
+			+ Thuộc tính của byte bộ nhớ không chỉ là read/write, mà còn lưu trữ được các thông số khác, ví dụ byte này thuộc quyền sở hữu của ai, byte này có được quyền share giữa các process với nhau hay không...
+
+			+ Để lưu trữ được các thuộc tính của 1 page bộ nhớ thì hệ điều hành có 1 đối tượng gọi là struct page
+
+		- Vậy ta biết được hệ điều hành sẽ quản lý như sau: nó phân chia bộ nhớ theo từng 4kB một, mỗi một 4kB được coi là 1 page, mỗi một page có 1 struct đại diện cho page đấy, trong struct này lưu thông tin của page đấy, tất cả các byte trong 1 page sẽ có chung nhau 1 thuộc tính được đại diện bởi struct đấy
+
+		- Khi có các biến constant, nó có thể được lưu vào các page bộ nhớ mà flag của page đấy đánh dấu là read-only -> khi thay đổi giá trị của byte trong page đấy, nó sẽ kiểm tra lại flag của page. Ví dụ flag là read-oly mà thay đổi thì nó sẽ báo truy cập invalid
+			-> bảo vệ được các biến constant không bị thay đổi
+
+	+ Bản chất của shared-memory giữa 2 process với nhau: cấp phát page nào đấy, trong struct page đấy flag sẽ bật lên là share. Khi 1 page được bật với quyền share, 1 process khác (tức là tên của process không nằm trong trường owner của page đấy) vẫn được quyền truy cập vào page đấy
+
+	+ Khi map 1 page vào trong không gian bộ nhớ của bạn, nó sẽ kiểm tra xem trường owner trong page đấy có khớp với process của bạn hay không. Nếu có thì được quyền sỡ hữu, nếu không thì không phải. Tuy nhiên nếu page có flag là share thì nó vẫn được, không cần owner vẫn truy cập được vào
+
+
+3. API
+	+ Hệ điều hành hỗ trợ các API để tiến hành shared-memory
+
+	+ Có 2 loại API chính:
+		- shm API
+		- mmap API
+		- bây giờ đa số toàn dùng mmap, ít dùng shm vì shm là old API, ít tính năng hơn so với mmap, có những tính năng mmap làm được mà shm không làm được. Về mặt code thì mmap cũng đơn giản hơn
+
+	+ mmap API: các bước
+		- tư tưởng của mmap: map memory thông qua file. Tại vì sao lại thế? Tại vì giữa 2 process sẽ có 2 không gian địa chỉ bộ nhớ khác nhau vì thông qua cơ chế virtual memory. Thành ra khi muốn share bộ nhớ nào đấy, nếu chỉ đơn giản là truyền địa chỉ bộ nhớ theo kiểu virtual memory thì bên kia sẽ không dùng được. Thành ra shared-memory sẽ không thể nào share đươc theo kiểu địa chỉ, mà phải dùng cơ chế định danh khác, có thể thông qua cơ chế định danh là file system, file system mang tính toàn cục
+
+		- do đó bước 1 là tạo file fd, để cho nó mang tính định danh của toàn hệ điều hành
+
+		- b2: set memory size cho vùng nhớ cần share
+			+ nếu file fd trỏ vào 1 file tồn tại thật, thì không cần phải set memory file nữa, lúc này memory size bằng chính size của file đấy luôn
+
+			+ còn trong trường hợp file fd nó không tồn tại 
+			(anonymous file fd) thì cần phải set memory file 
+
+		- sau khi set memory file này rồi thì trong hệ điều hành sẽ có 1 vùng nhớ thật, 1 vùng physical memory nào đấy có size bằng size đã set ở bước 2
+
+		- b3: map vùng physical memory đấy vào không gian bộ nhớ của chúng ta ( map shared mem to process). Việc map đấy tức là như nào?
+			+ tức là tiến hành update vào bảng TLB bao gồm cột virtual address và cột physical address. Bước này được gọi là bước map
+
+			+ sau khi map xong rồi thì bạn truy cập vào bộ nhớ đấy thông qua địa chỉ ảo
+
+		- b4: khi không dùng nữa thì unmap nó đi: unmap tức là xóa trường mapping giữa địa chỉ ảo và địa chỉ vật lý ra khỏi page table
+
+		- b5: nếu tất cả process đều được unmap ra khỏi vùng shared-memory đấy, và họ thấy rằng không cần phải dùng vùng đấy nữa thì có thể remove nó đi
+
+			-> unmap mới chỉ giải phóng việc mapping của vùng shared-memory vào địa chỉ ảo trên process đấy thôi, chứ không tiến hành free vùng shared-memory
+
+			-> vùng vật lý đấy vẫn đang ở đấy, vẫn đánh dấu là đang sử dụng, đang shared, chứ chưa bị free
+
+			-> remove mới thực sự là giải phóng vùng nhớ đấy
+
+			-> unmap mới chỉ là remove vùng bộ nhớ ảo, remove là remove vùng bộ nhớ vật lý thật đi
+
+			-> lúc remove rồi thì vùng nhớ đấy có thể được người khác sử dụng cho mục đích khác được
+
+		- ý nghĩa của remove ở bước 5:
+			+ page bộ nhớ sẽ có cờ bật ở 2 chế độ: đang sử dụng và đang không được sử dụng
+
+			+ mỗi khi 1 process xin cấp phát bộ nhớ, hệ điều hành sẽ quét các page, page nào mà đánh dấu đang không được sử dụng thì sẽ được tiến hành cấp phát cho process, nếu đánh dấu là đang sử dụng rồi page đấy sẽ bị bỏ qua
+
+			+ việc remove tức là mình bật bit từ đang sử dụng về đang không sử dụng cho page đấy
+
+			+ việc unmap hết tất cả process vào shared-memory, lúc đấy vùng shared-memory bị đánh dấu là đang không sử dụng nhưng không process nào dùng đến nữa -> sẽ coi như là 1 vùng memory bị leak
+
+			+ anonymous page
+
+			+ vùng nhớ vật lý được đánh dấu là share sẽ khác với những vùng khác: vùng nhớ bình thường ví dụ malloc thì khi process kết thúc vùng đấy cũng bị kết thúc theo, nhưng vùng đánh dấu là share thì khi kết thúc vùng đấy vẫn phải nằm đấy. Tại vì nó là share, bạn không dùng nữa thì người khác vẫn dùng, cho dù là vùng nhớ đấy do bạn tạo ra thì khi bạn kết thúc bạn vẫn phải để nó nằm lại đấy để người khác có thể dùng được tiếp
+
+4. Page Table và Virtual Memory
+	+ Mỗi 1 process sẽ có 1 bảng gọi là bảng page table, bảng này có 2 cột, 1 cột là địa chỉ virtual, 1 cột là địa chỉ physical
+
+	+ Trong bộ nhớ RAM, giả sử trong vùng bộ nhớ mà process của mình đang lưu trữ, có biến a = 5 được lưu ở địa chỉ vật lý là 0x2000
+
+	+ Đâu đấy trong bảng page table (bảng TLB), sẽ có 1 nơi lưu trữ đia chỉ vật lý đấy (0x2000), giả sử là 0x10. Do đặc thù virtual memory, mỗi khi process của mình truy cập vào địa chỉ của biến a (0x2000), nó sẽ không dùng địa chỉ 0x2000 mà sẽ dùng địa chỉ của riêng nó (0x10)
+		- tại sao phải dùng địa chỉ 0x10 này? Thì do cơ chế virtual memory: mỗi 1 process sẽ dùng 1 dải địa chỉ riêng
+
+		- tại sao lại thế? vì nếu tất cả process đều dùng địa chỉ vật lý thì sẽ có vấn đề, chẳng hạn như khi lập trình mình sẽ phải quan tâm lưu biến này vào đâu để không bị trùng với biến của người khác -> việc lập trình rất là phức tạp
+			-> hệ điều hành sinh ra cơ chế virtual memory: mỗi 1 process sẽ dùng dải địa chỉ riêng, người lập trình không phải lo sẽ trùng với người khác
+
+			-> trên process của mình, địa chỉ 0x10 được map vào 1 vùng trống nào đấy không bị trùng với người khác, và trên không gian địa chỉ bộ nhớ của 1 tiến trình khác cũng có 1 địa chỉ 0x10, nhưng địa chỉ 0x10 đấy cũng được map vào một vùng nhớ vật lý khác, không bị trùng nhau
+
+			-> hệ điều hành sẽ quản lý việc map địa chỉ 0x10 ở trên các không gian khác nhau vào các vùng nhớ vật lý nào, về mặt người lập trình không cần quan tâm nữa
+
+	+ Vậy thì khi truy cập vào bộ nhớ sẽ truy cập như nào? Chẳng hạn có câu lệnh a++, câu lệnh này sẽ được biên dịch ra 3 câu lệnh assembly (ASM) như sau:
+			ld $1, 0x10; 	// load
+			add $1, 1;
+			sw $1, 0x10;	// store
+	Nhưng mà câu lệnh trong mã ASM trên vẫn là địa chỉ ảo thôi
+		-> làm thế nào mà khi CPU thực thi ASM, nó lại có thể lưu đuọc vào vùng bộ nhớ physical trên RAM (0x2000)
+
+		-> nó dựa vào cơ chế như sau:
+			+ trong CPU có khối gọi mà MMU. Mỗi khi CPU thực hiện các câu lệnh cần phải thao tác là nạp từ bộ nhớ vào và ghi giá trị từ thanh ghi vào bộ nhớ, thì địa chỉ 0x10 trong câu lệnh ASM sẽ không được gửi trực tiếp  vào bus địa chỉ
+
+			+ Địa chỉ 0x10 sẽ được gửi vào MMU, MMU sẽ tra trong bảng TLB để xem địa chỉ 0x10 tương ứng với địa chỉ physical nào
+
+			+ Sau khi tra xong MMU sẽ gửi địa chỉ physical đấy vào bus
+
+	+ Ngày nay hầu hết các hệ điều hành đều dùng cơ chế virtual memory: android, linux, ios, macos, windows,...
+
+
+5. Lập trình
+	+ Đầu tiên, để tạo file fd bạn tiến hành mở file: shm_open(const char *name, O_CREAT|O_RDRW, 0666):
+		- tham số đầu tiên: tên file
+			+ 1 tên bất kỳ, không nhất thiết phải là file đã tồn tại
+
+			+ nhiệm vụ: để định danh cho vùng nhớ đấy
+
+			+ định danh đấy sẽ mang tính toàn cục trong hệ điều hành
+
+		- trường thứ 2: chế độ mở file: 
+			- tạo mới:
+				+ với tiến trình tạo ra vùng shared-memory thì phải truyền vào O_CREATE
+
+				+ những tiến trình sau mở ra thì không cần nữa
+
+			- RDRW: mở với chế độ read/write
+
+			- nếu truyền vào O_CREATE thì phải truyền vào mode của file (mod của vùng nhớ đấy)
+
+		- có thể dùng shm_open() để mở file đặc biệt /dev/mem
+			+ file /dev/mem khác những file khác ở chỗ file này sẽ đại diện cho bộ nhớ vật lý luôn
+
+			+ có thể dùng cơ chế này để ứng dụng: khi map trực tiếp vào vùng địa chỉ vật lý bằng file /dev/mem này thì lúc đấy có thể dùng 1 app thao tác vào thanh ghi được
+
+			+ kỹ thuật này dùng để thao tác với thanh ghi
+
+	+ b2: ftruncate(int fd, off_t length): khởi tạo vùng nhớ vật lý gắn cho file fd đấy
+		- hệ điều hành cấp phát địa chỉ vật lý có chiều dài bằng length cho file fd
+
+		- ở hàm shm_open(), nếu tham số name truyền vào là 1 file tồn tại thật thì không được gọi ra hàm ftruncate() nữa, nếu không sẽ lỗi. Lý do đơn giản vì file đấy tồn tại length rồi nên không phải ftruncate() làm gì nữa
+
+		- nếu fd trỏ vào /dev/mem thì không cần set memory size
+
+	+ b3: sau khi đã tạo ra file fd để định danh vùng nhớ vật lý đấy trên toàn hệ thống, set size của vùng nhớ vật lý cho file fd đấy, b3 muốn dùng được (muốn truy cập được vào vùng nhớ vật lý đấy) thì phải có bước xin cấp phát địa chỉ ảo để mapping vùng địa chỉ vật lý đấy vào không gian bộ nhớ của process của  các bạn bằng hàm: void *mmap(void *addr, size_t length, int prot, int flags, int fd, off_t offset)
+		- tham số đầu tiên: giá trị địa chỉ ảo bắt đầu tìm kiếm vùng trống để mapping vùng bộ nhớ vật lý kia
+			+ ví dụ truyền vào là 10, thì hệ điều hành chỉ tìm các địa chỉ virtual > 10 để mapping cho vùng physical kia thôi
+
+		- tham số thứ 2: độ rộng địa chỉ ảo bạn muốn mapping
+			+ ví dụ vùng vật lý có size là 8kB, nhưng bạn có quyền lựa chọn mapping vùng < 8kB, chẳng hạn chỉ mapping 4kB thôi
+
+		- tham số thứ 3: mode mà bạn muốn mapping vào
+			+ ví dụ vùng vật lý kia có mode tạo ra là 0666, nhưng bạn có quyền map lại với quyền nhỏ hơn là chỉ map với quyền read thôi
+
+			+ nhưng không được phép map vượt quyền, chỉ được map với quyền nhỏ hơn thôi
+
+		- tham số thứ 4: chỉ định thuộc tính của shared-memory
+
+		- tham số cuối cùng: bạn muốn mapping từ offset nào tính từ file fd này (ví dụ cách đầu file 10byte)
+			+ nếu mmap() vào file /dev/mem thì offset truyền vào chính là vùng địa chỉ vật lý luôn
+
+			+ vì /dev/mem sễ trỏ thằng vào vùng địa chỉ vật lý
+
+			+ nếu là /dev/mem: kỹ thuật này dùng để lập trình driver chạy trên tầng user-space
+
+	+ nếu muốn unmap gọi ra hàm munmap(void *addr, size_t length)
+		- truyền vào con trỏ trả về của hàm mmap và độ rộng của vùng muốn unmap
+
+		- hàm này không free bộ nhớ vật lý, chỉ unmap địa chỉ ảo đi thôi
+
+	+ shm_unlink(const char *name)
+		- thực sự muốn remove, muốn free đi vùng nhớ vật lý đi thì gọi ra hàm này
+
+	+ driver chạy trên tầng app nếu bị lỗi nó không gây crash hệ thống, còn driver chạy dưới kernel bị lỗi sẽ gây crash hệ thống
